@@ -8,6 +8,7 @@ GitHub Pagesでの公開を想定。
 import yfinance as yf
 import json
 import datetime
+import time
 import sys
 
 # ====== 設定 ======
@@ -122,54 +123,69 @@ def calc_returns(tk):
 
 def fetch_etf_data():
     etf_data = []
-    for ticker_str in TICKERS:
-        print(f"取得中: {ticker_str}...")
-        try:
-            tk = yf.Ticker(ticker_str)
-            info = tk.info
-            debug_keys(info, ticker_str)
+    for i, ticker_str in enumerate(TICKERS):
+        print(f"取得中: {ticker_str} ({i+1}/{len(TICKERS)})...")
 
-            # 同じTickerオブジェクトでリターン計算（余計なAPI呼び出しを避ける）
-            returns = calc_returns(tk)
-            # 経費率: 複数キーでフォールバック
-            expense = (safe_get(info, "annualReportExpenseRatio")
-                       or safe_get(info, "expenseRatio")
-                       or safe_get(info, "annualHoldingsTurnover"))
+        # 2銘柄目以降は2秒待つ（レート制限対策）
+        if i > 0:
+            time.sleep(2)
 
-            # PBR
-            pbr = safe_get(info, "priceToBook")
+        row = None
+        for attempt in range(3):  # 最大3回リトライ
+            try:
+                tk = yf.Ticker(ticker_str)
+                info = tk.info
 
-            # PER
-            per = safe_get(info, "trailingPE") or safe_get(info, "forwardPE")
+                # infoがほぼ空ならレート制限の可能性 → リトライ
+                if not info or len(info) < 5:
+                    print(f"  データ不足（{len(info) if info else 0}キー）、リトライ{attempt+1}...")
+                    time.sleep(5)
+                    continue
 
+                debug_keys(info, ticker_str)
+                returns = calc_returns(tk)
+
+                expense = (safe_get(info, "annualReportExpenseRatio")
+                           or safe_get(info, "expenseRatio")
+                           or safe_get(info, "annualHoldingsTurnover"))
+                pbr = safe_get(info, "priceToBook")
+                per = safe_get(info, "trailingPE") or safe_get(info, "forwardPE")
+
+                row = {
+                    "ticker": ticker_str,
+                    "name": safe_get(info, "shortName", ticker_str),
+                    "per": per,
+                    "pbr": pbr,
+                    "expense_ratio": expense,
+                    "market_cap": safe_get(info, "totalAssets"),
+                    "dividend_yield": safe_get(info, "yield"),
+                    "ytd": returns.get("ytd"),
+                    "return_1y": returns.get("1y"),
+                    "return_3y": returns.get("3y"),
+                    "return_5y": returns.get("5y"),
+                    "price": safe_get(info, "previousClose"),
+                    "currency": safe_get(info, "currency", "USD"),
+                    "category": safe_get(info, "category", "-"),
+                }
+                print(f"  完了: {row['name']}")
+                break
+
+            except Exception as e:
+                print(f"  エラー（リトライ{attempt+1}）: {e}")
+                if attempt < 2:
+                    time.sleep(5)
+
+        if row is None:
+            print(f"  ⚠ {ticker_str}: 全リトライ失敗")
             row = {
-                "ticker": ticker_str,
-                "name": safe_get(info, "shortName", ticker_str),
-                "per": per,
-                "pbr": pbr,
-                "expense_ratio": expense,
-                "market_cap": safe_get(info, "totalAssets"),
-                "dividend_yield": safe_get(info, "yield"),
-                "ytd": returns.get("ytd"),
-                "return_1y": returns.get("1y"),
-                "return_3y": returns.get("3y"),
-                "return_5y": returns.get("5y"),
-                "price": safe_get(info, "previousClose"),
-                "currency": safe_get(info, "currency", "USD"),
-                "category": safe_get(info, "category", "-"),
-            }
-            etf_data.append(row)
-            print(f"  完了: {row['name']}")
-        except Exception as e:
-            print(f"  エラー ({ticker_str}): {e}")
-            etf_data.append({
                 "ticker": ticker_str, "name": ticker_str,
                 "per": None, "pbr": None, "expense_ratio": None,
                 "market_cap": None, "dividend_yield": None,
                 "ytd": None, "return_1y": None,
                 "return_3y": None, "return_5y": None,
                 "price": None, "currency": "USD", "category": "-",
-            })
+            }
+        etf_data.append(row)
     return etf_data
 
 
