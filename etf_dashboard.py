@@ -38,14 +38,17 @@ def safe_get(info: dict, key: str, default=None):
     return val
 
 
-def fmt_pct(val):
+def fmt_pct(val, show_sign=True):
     """パーセント表示用フォーマット"""
     if val is None or val == "-":
         return "-"
     try:
         v = float(val) * 100
-        sign = "+" if v > 0 else ""
-        return f"{sign}{v:.2f}%"
+        if show_sign:
+            sign = "+" if v > 0 else ""
+            return f"{sign}{v:.2f}%"
+        else:
+            return f"{v:.2f}%"
     except (ValueError, TypeError):
         return "-"
 
@@ -214,35 +217,34 @@ def generate_html(etf_data):
     """HTMLファイルを生成"""
     now = datetime.datetime.now().strftime("%Y年%m月%d日 %H:%M")
 
-    # テーブル行を生成
+    # テーブル行を生成（名称列削除、価格を2列目に、経費率・配当利回りは符号なし）
     rows_html = ""
-    for d in etf_data:
+    for i, d in enumerate(etf_data):
         ytd_cls = color_cell(d["ytd"])
         r1y_cls = color_cell(d["return_1y"])
         r3y_cls = color_cell(d["return_3y"])
         r5y_cls = color_cell(d["return_5y"])
 
         rows_html += f"""
-        <tr>
+        <tr data-idx="{i}" onclick="selectRow(this, {i})" title="{d.get('name','')}">
             <td class="ticker-cell"><strong>{d['ticker']}</strong></td>
-            <td class="name-cell" title="{d.get('name','')}">{d.get('name','')[:30]}</td>
+            <td>{fmt_num(d['price'], 2)}</td>
             <td>{fmt_num(d['per'], 1)}</td>
             <td>{fmt_num(d['pbr'], 2)}</td>
-            <td>{fmt_pct(d['expense_ratio'])}</td>
+            <td>{fmt_pct(d['expense_ratio'], show_sign=False)}</td>
             <td>{fmt_market_cap(d['market_cap'])}</td>
-            <td>{fmt_pct(d['dividend_yield'])}</td>
+            <td>{fmt_pct(d['dividend_yield'], show_sign=False)}</td>
             <td class="{ytd_cls}">{fmt_pct(d['ytd'])}</td>
             <td class="{r1y_cls}">{fmt_pct(d['return_1y'])}</td>
             <td class="{r3y_cls}">{fmt_pct(d['return_3y'])}</td>
             <td class="{r5y_cls}">{fmt_pct(d['return_5y'])}</td>
-            <td>{fmt_num(d['price'], 2)}</td>
         </tr>"""
 
     # 円グラフ用データ（時価総額ベースの構成比）
     pie_data = []
     colors = [
         "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF",
-        "#FF9F40", "#E7E9ED", "#7BC8A4", "#F67019", "#4DC9F6",
+        "#FF9F40", "#66BB6A", "#7BC8A4", "#F67019", "#4DC9F6",
         "#ACC236", "#FF5A5E", "#C9CB3F",
     ]
     total_mc = sum(float(d["market_cap"]) for d in etf_data if d["market_cap"] is not None)
@@ -255,12 +257,25 @@ def generate_html(etf_data):
             "color": colors[i % len(colors)],
         })
 
-    # リターン比較バーチャート用データ
-    bar_labels = json.dumps([d["ticker"] for d in etf_data])
-    bar_ytd = json.dumps([round(float(d["ytd"]) * 100, 2) if d["ytd"] is not None else 0 for d in etf_data])
-    bar_1y = json.dumps([round(float(d["return_1y"]) * 100, 2) if d["return_1y"] is not None else 0 for d in etf_data])
-
     pie_json = json.dumps(pie_data)
+
+    # 行選択チャート用のデータ（各ETFのリターン情報）
+    chart_data_list = []
+    for d in etf_data:
+        chart_data_list.append({
+            "ticker": d["ticker"],
+            "name": d.get("name", d["ticker"]),
+            "ytd": round(float(d["ytd"]) * 100, 2) if d["ytd"] is not None else None,
+            "r1y": round(float(d["return_1y"]) * 100, 2) if d["return_1y"] is not None else None,
+            "r3y": round(float(d["return_3y"]) * 100, 2) if d["return_3y"] is not None else None,
+            "r5y": round(float(d["return_5y"]) * 100, 2) if d["return_5y"] is not None else None,
+            "per": round(float(d["per"]), 1) if d["per"] is not None else None,
+            "pbr": round(float(d["pbr"]), 2) if d["pbr"] is not None else None,
+            "expense": round(float(d["expense_ratio"]) * 100, 2) if d["expense_ratio"] is not None else None,
+            "divyield": round(float(d["dividend_yield"]) * 100, 2) if d["dividend_yield"] is not None else None,
+            "price": round(float(d["price"]), 2) if d["price"] is not None else None,
+        })
+    chart_data_json = json.dumps(chart_data_list, ensure_ascii=False)
 
     html = f"""<!DOCTYPE html>
 <html lang="ja">
@@ -298,14 +313,6 @@ h1 {{
     margin-bottom: 6px;
     font-weight: 500;
 }}
-.section-title {{
-    font-size: 1.1rem;
-    font-weight: 800;
-    color: #1b263b;
-    margin: 8px 0 4px 0;
-    padding-left: 8px;
-    border-left: 4px solid #FF6384;
-}}
 
 /* テーブル */
 .table-wrapper {{
@@ -339,6 +346,10 @@ tbody td {{
     border-bottom: 1px solid #e8e8e8;
     white-space: nowrap;
 }}
+tbody tr {{
+    cursor: pointer;
+    transition: background 0.15s;
+}}
 tbody tr:hover {{
     background: #f0f4ff;
 }}
@@ -348,19 +359,14 @@ tbody tr:nth-child(even) {{
 tbody tr:nth-child(even):hover {{
     background: #e8eeff;
 }}
+tbody tr.selected {{
+    background: #dce6ff !important;
+    box-shadow: inset 3px 0 0 #0d47a1;
+}}
 .ticker-cell {{
     color: #0d47a1;
     font-weight: 900;
     font-size: 0.9rem;
-}}
-.name-cell {{
-    text-align: left;
-    font-weight: 600;
-    max-width: 200px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    font-size: 0.72rem;
-    color: #555;
 }}
 .positive {{ color: #d32f2f; font-weight: 900; }}
 .negative {{ color: #1565c0; font-weight: 900; }}
@@ -400,6 +406,38 @@ canvas {{
     max-height: 400px;
 }}
 
+/* 個別チャートボックス */
+.detail-chart-container {{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 400px;
+    position: relative;
+}}
+.detail-placeholder {{
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    color: #aaa;
+    font-weight: 700;
+    font-size: 0.9rem;
+    gap: 8px;
+    height: 100%;
+    min-height: 400px;
+}}
+.detail-placeholder svg {{
+    opacity: 0.3;
+}}
+#detailTitle {{
+    font-size: 0.9rem;
+    font-weight: 800;
+    color: #1b263b;
+    margin-bottom: 6px;
+    text-align: center;
+    min-height: 1.2em;
+}}
+
 /* フッター */
 footer {{
     text-align: center;
@@ -421,13 +459,12 @@ footer {{
 <h1>ETF比較ダッシュボード</h1>
 <p class="update-time">最終更新: {now}</p>
 
-<div class="section-title">データ一覧</div>
 <div class="table-wrapper">
 <table>
 <thead>
 <tr>
     <th>ティッカー</th>
-    <th>名称</th>
+    <th>価格(USD)</th>
     <th>PER</th>
     <th>PBR</th>
     <th>経費率</th>
@@ -437,7 +474,6 @@ footer {{
     <th>1年</th>
     <th>3年(年率)</th>
     <th>5年(年率)</th>
-    <th>価格(USD)</th>
 </tr>
 </thead>
 <tbody>
@@ -454,8 +490,14 @@ footer {{
         </div>
     </div>
     <div class="chart-box">
-        <h3>リターン比較 (YTD vs 1年)</h3>
-        <canvas id="barChart" height="400"></canvas>
+        <h3 id="detailTitle"></h3>
+        <div class="detail-chart-container">
+            <div class="detail-placeholder" id="detailPlaceholder">
+                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 5-9"/></svg>
+                テーブルの行をクリックするとチャートを表示
+            </div>
+            <canvas id="detailChart" style="display:none;"></canvas>
+        </div>
     </div>
 </div>
 
@@ -467,6 +509,9 @@ footer {{
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
+// ETFデータ
+const etfData = {chart_data_json};
+
 // 円グラフ
 const pieData = {pie_json};
 new Chart(document.getElementById('pieChart'), {{
@@ -497,48 +542,112 @@ new Chart(document.getElementById('pieChart'), {{
     }}
 }});
 
-// バーチャート
-new Chart(document.getElementById('barChart'), {{
-    type: 'bar',
-    data: {{
-        labels: {bar_labels},
-        datasets: [
-            {{
-                label: 'YTD (%)',
-                data: {bar_ytd},
-                backgroundColor: 'rgba(255, 99, 132, 0.7)',
-                borderColor: '#FF6384',
-                borderWidth: 1,
+// 個別ETF詳細チャート
+let detailChartInstance = null;
+
+function selectRow(tr, idx) {{
+    // 選択状態の切り替え
+    document.querySelectorAll('tbody tr').forEach(r => r.classList.remove('selected'));
+    tr.classList.add('selected');
+
+    const d = etfData[idx];
+    const placeholder = document.getElementById('detailPlaceholder');
+    const canvas = document.getElementById('detailChart');
+    const title = document.getElementById('detailTitle');
+
+    placeholder.style.display = 'none';
+    canvas.style.display = 'block';
+    title.textContent = d.ticker + '　' + d.name;
+
+    // 既存チャートを破棄
+    if (detailChartInstance) {{
+        detailChartInstance.destroy();
+    }}
+
+    // リターン棒グラフ + 指標レーダー的な表示
+    const labels = ['YTD', '1年', '3年(年率)', '5年(年率)'];
+    const values = [d.ytd, d.r1y, d.r3y, d.r5y];
+    const bgColors = values.map(v => {{
+        if (v === null) return '#ddd';
+        return v >= 0 ? 'rgba(211, 47, 47, 0.65)' : 'rgba(21, 101, 192, 0.65)';
+    }});
+    const borderColors = values.map(v => {{
+        if (v === null) return '#ccc';
+        return v >= 0 ? '#d32f2f' : '#1565c0';
+    }});
+
+    detailChartInstance = new Chart(canvas, {{
+        type: 'bar',
+        data: {{
+            labels: labels,
+            datasets: [{{
+                label: 'リターン (%)',
+                data: values.map(v => v !== null ? v : 0),
+                backgroundColor: bgColors,
+                borderColor: borderColors,
+                borderWidth: 2,
+                borderRadius: 4,
+            }}]
+        }},
+        options: {{
+            responsive: true,
+            maintainAspectRatio: false,
+            indexAxis: 'y',
+            scales: {{
+                x: {{
+                    ticks: {{
+                        callback: v => v + '%',
+                        font: {{ weight: 'bold', size: 12 }}
+                    }},
+                    grid: {{ color: '#f0f0f0' }}
+                }},
+                y: {{
+                    ticks: {{ font: {{ weight: 'bold', size: 13 }} }},
+                    grid: {{ display: false }}
+                }}
             }},
-            {{
-                label: '1年リターン (%)',
-                data: {bar_1y},
-                backgroundColor: 'rgba(54, 162, 235, 0.7)',
-                borderColor: '#36A2EB',
-                borderWidth: 1,
-            }}
-        ]
-    }},
-    options: {{
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {{
-            y: {{
-                ticks: {{ callback: v => v + '%', font: {{ weight: 'bold' }} }},
-                grid: {{ color: '#eee' }}
+            plugins: {{
+                legend: {{ display: false }},
+                tooltip: {{
+                    callbacks: {{
+                        label: ctx => {{
+                            const v = ctx.raw;
+                            const sign = v > 0 ? '+' : '';
+                            return sign + v.toFixed(2) + '%';
+                        }}
+                    }},
+                    titleFont: {{ weight: 'bold', size: 13 }},
+                    bodyFont: {{ weight: 'bold', size: 13 }},
+                }},
+                // データラベル表示（Chart.js本体のみで実装）
             }},
-            x: {{
-                ticks: {{ font: {{ weight: 'bold', size: 11 }} }},
-                grid: {{ display: false }}
+            animation: {{
+                duration: 400,
+                easing: 'easeOutQuart'
             }}
         }},
-        plugins: {{
-            legend: {{
-                labels: {{ font: {{ size: 12, weight: 'bold' }}, padding: 10 }}
+        plugins: [{{
+            // インラインプラグイン: バーの横に値を表示
+            afterDraw(chart) {{
+                const ctx = chart.ctx;
+                chart.data.datasets[0].data.forEach((val, i) => {{
+                    const meta = chart.getDatasetMeta(0);
+                    const bar = meta.data[i];
+                    const sign = val > 0 ? '+' : '';
+                    const text = sign + val.toFixed(2) + '%';
+                    ctx.save();
+                    ctx.font = 'bold 13px sans-serif';
+                    ctx.fillStyle = val >= 0 ? '#d32f2f' : '#1565c0';
+                    ctx.textAlign = val >= 0 ? 'left' : 'right';
+                    ctx.textBaseline = 'middle';
+                    const xPos = val >= 0 ? bar.x + 6 : bar.x - 6;
+                    ctx.fillText(text, xPos, bar.y);
+                    ctx.restore();
+                }});
             }}
-        }}
-    }}
-}});
+        }}]
+    }});
+}}
 </script>
 </body>
 </html>"""
