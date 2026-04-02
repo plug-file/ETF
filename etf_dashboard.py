@@ -12,6 +12,10 @@ import sys
 
 # ====== 設定 ======
 TICKERS = [
+    "VT",    # 全世界株式
+    "VTI",   # 米国株式トータル
+    "SPY",   # S&P 500
+    "VGK",   # ヨーロッパ
     "EWG",   # ドイツ
     "EPOL",  # ポーランド
     "TUR",   # トルコ
@@ -23,6 +27,7 @@ TICKERS = [
     "EWM",   # マレーシア
     "THD",   # タイ
     "EPHE",  # フィリピン
+    "GLD",   # 金
     "GDX",   # 金鉱株
     "IBB",   # バイオテック
 ]
@@ -112,31 +117,21 @@ def calc_returns(ticker_str):
         else:
             returns["1y"] = None
 
-        # 3年平均リターン（年率）
+        # 3年トータルリターン
         three_year_ago = now - datetime.timedelta(days=365 * 3)
         candidates = hist.index[hist.index >= three_year_ago]
         if len(candidates) > 0:
             price_3y = hist["Close"].loc[candidates[0]]
-            total_return = (today_price - price_3y) / price_3y
-            years = (now - candidates[0]).days / 365.25
-            if years > 0:
-                returns["3y_ann"] = (1 + total_return) ** (1 / years) - 1
-            else:
-                returns["3y_ann"] = None
+            returns["3y_ann"] = (today_price - price_3y) / price_3y
         else:
             returns["3y_ann"] = None
 
-        # 5年平均リターン（年率）
+        # 5年トータルリターン
         five_year_ago = now - datetime.timedelta(days=365 * 5)
         candidates = hist.index[hist.index >= five_year_ago]
         if len(candidates) > 0:
             price_5y = hist["Close"].loc[candidates[0]]
-            total_return = (today_price - price_5y) / price_5y
-            years = (now - candidates[0]).days / 365.25
-            if years > 0:
-                returns["5y_ann"] = (1 + total_return) ** (1 / years) - 1
-            else:
-                returns["5y_ann"] = None
+            returns["5y_ann"] = (today_price - price_5y) / price_5y
         else:
             returns["5y_ann"] = None
 
@@ -245,7 +240,8 @@ def generate_html(etf_data):
     colors = [
         "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF",
         "#FF9F40", "#66BB6A", "#7BC8A4", "#F67019", "#4DC9F6",
-        "#ACC236", "#FF5A5E", "#C9CB3F",
+        "#ACC236", "#FF5A5E", "#C9CB3F", "#8B5CF6", "#EC4899",
+        "#F59E0B", "#10B981", "#6366F1",
     ]
     total_mc = sum(float(d["market_cap"]) for d in etf_data if d["market_cap"] is not None)
     for i, d in enumerate(etf_data):
@@ -472,8 +468,8 @@ footer {{
     <th>配当利回り</th>
     <th>YTD</th>
     <th>1年</th>
-    <th>3年(年率)</th>
-    <th>5年(年率)</th>
+    <th>3年</th>
+    <th>5年</th>
 </tr>
 </thead>
 <tbody>
@@ -565,7 +561,7 @@ function selectRow(tr, idx) {{
     }}
 
     // リターン棒グラフ + 指標レーダー的な表示
-    const labels = ['YTD', '1年', '3年(年率)', '5年(年率)'];
+    const labels = ['YTD', '1年', '3年', '5年'];
     const values = [d.ytd, d.r1y, d.r3y, d.r5y];
     const bgColors = values.map(v => {{
         if (v === null) return '#ddd';
