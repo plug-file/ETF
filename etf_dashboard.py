@@ -1,22 +1,17 @@
 #!/usr/bin/env python3
 """
 ETF比較ダッシュボード生成スクリプト
-Financial Modeling Prep (FMP) APIからETFデータを自動取得し、HTMLファイルを生成する。
+yfinanceからETFデータを自動取得し、HTMLファイルを生成する。
 GitHub Pagesでの公開を想定。
 """
 
+import yfinance as yf
 import json
 import datetime
 import time
 import sys
-import os
-import urllib.request
-import urllib.error
 
 # ====== 設定 ======
-FMP_API_KEY = os.environ.get("FMP_API_KEY", "")
-FMP_BASE = "https://financialmodelingprep.com"
-
 TICKERS = [
     "VT",    # 全世界株式
     "VTI",   # 米国株式トータル
@@ -41,93 +36,30 @@ TICKERS = [
 OUTPUT_FILE = "docs/index.html"
 
 
-# ====================================================================
-#  API通信
-# ====================================================================
-
-def fmp_get(path: str, params: dict | None = None, label: str = ""):
-    """
-    FMP APIへGETリクエストを送り、JSONを返す。
-    path は "/stable/profile" や "/api/v3/quote/SPY" のような形式。
-    """
-    if params is None:
-        params = {}
-    params["apikey"] = FMP_API_KEY
-
-    query = "&".join(f"{k}={v}" for k, v in params.items())
-    url = f"{FMP_BASE}{path}?{query}"
-
-    for attempt in range(3):
-        try:
-            req = urllib.request.Request(url, headers={"User-Agent": "ETF-Dashboard/1.0"})
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                body = resp.read().decode("utf-8")
-                data = json.loads(body)
-
-                # FMPはエラー時に {"Error Message": "..."} を返すことがある
-                if isinstance(data, dict) and "Error Message" in data:
-                    print(f"    ⚠ API Error [{label}]: {data['Error Message']}")
-                    return None
-
-                return data
-
-        except urllib.error.HTTPError as e:
-            body = ""
-            try:
-                body = e.read().decode("utf-8", errors="replace")[:300]
-            except Exception:
-                pass
-            print(f"    HTTP {e.code} [{label}] (試行 {attempt+1}/3): {e.reason}")
-            if body:
-                print(f"      Body: {body}")
-            if e.code == 429:
-                time.sleep(5 * (attempt + 1))
-            elif e.code == 403:
-                print("    → APIキーまたはプランの問題の可能性があります")
-                return None
-            else:
-                time.sleep(2)
-
-        except Exception as e:
-            print(f"    エラー [{label}] (試行 {attempt+1}/3): {e}")
-            time.sleep(2)
-
-    return None
+def safe_get(info: dict, key: str, default=None):
+    val = info.get(key, default)
+    return default if val is None else val
 
 
-# ====================================================================
-#  ユーティリティ
-# ====================================================================
-
-def safe_float(val, default=None):
-    if val is None:
-        return default
-    try:
-        return float(val)
-    except (ValueError, TypeError):
-        return default
+def debug_keys(info: dict, ticker: str):
+    """デバッグ用: ETFの経費率・PBR関連のキーを出力"""
+    keys_of_interest = [
+        "annualReportExpenseRatio", "expenseRatio", "annualHoldingsTurnover",
+        "priceToBook", "bookValue", "navPrice",
+        "trailingPE", "forwardPE",
+    ]
+    found = {k: info.get(k) for k in keys_of_interest if info.get(k) is not None}
+    if found:
+        print(f"  [{ticker}] 検出キー: {found}")
+    else:
+        print(f"  [{ticker}] 関連キー見つからず")
 
 
 def fmt_pct(val, show_sign=True):
-    """0.05 → "5.00%" のように小数比率をパーセント表記"""
     if val is None or val == "-":
         return "-"
     try:
         v = float(val) * 100
-        if show_sign:
-            return f"{'+' if v > 0 else ''}{v:.2f}%"
-        else:
-            return f"{v:.2f}%"
-    except (ValueError, TypeError):
-        return "-"
-
-
-def fmt_pct_raw(val, show_sign=True):
-    """既にパーセント値（例: 5.23）をそのまま表記"""
-    if val is None or val == "-":
-        return "-"
-    try:
-        v = float(val)
         if show_sign:
             return f"{'+' if v > 0 else ''}{v:.2f}%"
         else:
@@ -162,188 +94,100 @@ def fmt_market_cap(val):
         return "-"
 
 
-# ====================================================================
-#  データ取得
-# ====================================================================
+def calc_returns(tk):
+    """既存のTickerオブジェクトからリターンを計算（追加のAPI呼び出しを避ける）"""
+    try:
+        hist = tk.history(period="5y")
+        if hist.empty:
+            return {}
+        today_price = hist["Close"].iloc[-1]
+        returns = {}
+        now = hist.index[-1]
 
-def fetch_quote_batch(tickers: list[str]) -> dict:
-    """
-    /stable/quote でバッチ取得（カンマ区切り）。
-    price, pe, priceToBook, marketCap, volume 等が取れる。
-    """
-    result = {}
-    tickers_str = ",".join(tickers)
-    data = fmp_get("/stable/quote", {"symbol": tickers_str}, label="quote-batch")
-    if data and isinstance(data, list):
-        for item in data:
-            sym = item.get("symbol", "")
-            if sym:
-                result[sym] = item
-    return result
+        year_start = hist.index[hist.index >= f"{now.year}-01-01"]
+        if len(year_start) > 0:
+            returns["ytd"] = (today_price - hist["Close"].loc[year_start[0]]) / hist["Close"].loc[year_start[0]]
 
+        for key, days in [("1y", 365), ("3y", 365*3), ("5y", 365*5)]:
+            ago = now - datetime.timedelta(days=days)
+            cands = hist.index[hist.index >= ago]
+            if len(cands) > 0:
+                p = hist["Close"].loc[cands[0]]
+                returns[key] = (today_price - p) / p
 
-def fetch_price_change_batch(tickers: list[str]) -> dict:
-    """
-    /stable/stock-price-change でバッチ取得。
-    ytd, 1Y, 3Y, 5Y 等のパーセント変動が取れる。
-    """
-    result = {}
-    tickers_str = ",".join(tickers)
-    data = fmp_get("/stable/stock-price-change", {"symbol": tickers_str}, label="price-change-batch")
-    if data and isinstance(data, list):
-        for item in data:
-            sym = item.get("symbol", "")
-            if sym:
-                result[sym] = item
-    return result
-
-
-def fetch_etf_info_single(ticker: str) -> dict:
-    """
-    ETF固有情報（経費率等）を取得。
-    /stable/etf-info → v4レガシー の順で試行。
-    """
-    # 1) stable エンドポイント
-    data = fmp_get("/stable/etf-info", {"symbol": ticker}, label=f"etf-info-stable-{ticker}")
-    if data and isinstance(data, list) and len(data) > 0:
-        return data[0]
-
-    # 2) レガシー v4
-    data = fmp_get("/api/v4/etf-info", {"symbol": ticker}, label=f"etf-info-v4-{ticker}")
-    if data and isinstance(data, list) and len(data) > 0:
-        return data[0]
-
-    return {}
+        return returns
+    except Exception as e:
+        print(f"  リターン計算エラー: {e}")
+        return {}
 
 
 def fetch_etf_data():
-    """FMP APIからETFデータを取得して統合"""
-    if not FMP_API_KEY:
-        print("❌ FMP_API_KEY が設定されていません。")
-        print("   環境変数 FMP_API_KEY にAPIキーを設定してください。")
-        sys.exit(1)
-
-    print(f"🔑 APIキー: {FMP_API_KEY[:4]}...{FMP_API_KEY[-4:]}")
-
-    # --- 1) quote（価格・PER等）バッチ取得 ---
-    print(f"\n📡 [1/3] Quote取得中...")
-    quotes = fetch_quote_batch(TICKERS)
-    print(f"  → {len(quotes)}件取得")
-    if quotes:
-        sample_key = next(iter(quotes))
-        sample = quotes[sample_key]
-        print(f"  → サンプル ({sample_key}): price={sample.get('price')}, pe={sample.get('pe')}, marketCap={sample.get('marketCap')}")
-    else:
-        print("  ⚠ Quote取得失敗！APIキーやプランを確認してください。")
-        # 個別取得を試行
-        print("  → 個別取得を試行します...")
-        for t in TICKERS[:2]:
-            print(f"    テスト: {t}")
-            data = fmp_get(f"/stable/quote", {"symbol": t}, label=f"quote-single-{t}")
-            if data:
-                print(f"      レスポンス型: {type(data).__name__}, 長さ: {len(data) if isinstance(data, list) else 'N/A'}")
-                if isinstance(data, list) and len(data) > 0:
-                    print(f"      キー: {list(data[0].keys())[:10]}")
-                elif isinstance(data, dict):
-                    print(f"      キー: {list(data.keys())[:10]}")
-            else:
-                print(f"      → None（取得失敗）")
-            time.sleep(1)
-
-    # --- 2) price-change（リターン）バッチ取得 ---
-    print(f"\n📡 [2/3] 価格変動取得中...")
-    price_changes = fetch_price_change_batch(TICKERS)
-    print(f"  → {len(price_changes)}件取得")
-    if price_changes:
-        sample_key = next(iter(price_changes))
-        sample = price_changes[sample_key]
-        print(f"  → サンプル ({sample_key}): ytd={sample.get('ytd')}, 1Y={sample.get('1Y')}, 5Y={sample.get('5Y')}")
-
-    # --- 3) ETF情報（経費率等）個別取得 ---
-    print(f"\n📡 [3/3] ETF情報取得中...")
-    etf_infos = {}
-    for i, ticker_str in enumerate(TICKERS):
-        ei = fetch_etf_info_single(ticker_str)
-        if ei:
-            etf_infos[ticker_str] = ei
-        if i < len(TICKERS) - 1:
-            time.sleep(0.4)
-    print(f"  → {len(etf_infos)}件取得")
-    if etf_infos:
-        sample_key = next(iter(etf_infos))
-        sample = etf_infos[sample_key]
-        print(f"  → サンプル ({sample_key}): expenseRatio={sample.get('expenseRatio')}, aum={sample.get('aum')}")
-
-    # --- 4) データ統合 ---
-    print(f"\n📊 データ統合中...")
     etf_data = []
-    for ticker_str in TICKERS:
-        q = quotes.get(ticker_str, {})
-        pc = price_changes.get(ticker_str, {})
-        ei = etf_infos.get(ticker_str, {})
+    for i, ticker_str in enumerate(TICKERS):
+        print(f"取得中: {ticker_str} ({i+1}/{len(TICKERS)})...")
 
-        # 経費率
-        expense = safe_float(ei.get("expenseRatio"))
+        # 2銘柄目以降は2秒待つ（レート制限対策）
+        if i > 0:
+            time.sleep(2)
 
-        # 配当利回り
-        dividend_yield = None
-        # quoteから取得を試みる
-        if q.get("annualDividend") and q.get("price"):
-            price_val = safe_float(q.get("price"))
-            div_val = safe_float(q.get("annualDividend"))
-            if price_val and div_val and price_val > 0:
-                dividend_yield = div_val / price_val
-        # ETF infoのdividendYieldをフォールバック
-        if dividend_yield is None and ei.get("dividendYield"):
-            dividend_yield = safe_float(ei.get("dividendYield"))
+        row = None
+        for attempt in range(3):  # 最大3回リトライ
+            try:
+                tk = yf.Ticker(ticker_str)
+                info = tk.info
 
-        # リターン（FMPは%値、例: 5.23 = +5.23%）
-        ytd_pct = safe_float(pc.get("ytd"))
-        r1y_pct = safe_float(pc.get("1Y"))
-        r3y_pct = safe_float(pc.get("3Y"))
-        r5y_pct = safe_float(pc.get("5Y"))
+                # infoがほぼ空ならレート制限の可能性 → リトライ
+                if not info or len(info) < 5:
+                    print(f"  データ不足（{len(info) if info else 0}キー）、リトライ{attempt+1}...")
+                    time.sleep(5)
+                    continue
 
-        # 時価総額
-        market_cap = safe_float(q.get("marketCap")) or safe_float(ei.get("aum")) or safe_float(ei.get("totalAssets"))
+                debug_keys(info, ticker_str)
+                returns = calc_returns(tk)
 
-        # PER・PBR
-        per = safe_float(q.get("pe"))
-        pbr = safe_float(q.get("priceToBook"))
+                expense = (safe_get(info, "annualReportExpenseRatio")
+                           or safe_get(info, "expenseRatio")
+                           or safe_get(info, "annualHoldingsTurnover"))
+                pbr = safe_get(info, "priceToBook")
+                per = safe_get(info, "trailingPE") or safe_get(info, "forwardPE")
 
-        # 価格
-        price = safe_float(q.get("price")) or safe_float(q.get("previousClose"))
+                row = {
+                    "ticker": ticker_str,
+                    "name": safe_get(info, "shortName", ticker_str),
+                    "per": per,
+                    "pbr": pbr,
+                    "expense_ratio": expense,
+                    "market_cap": safe_get(info, "totalAssets"),
+                    "dividend_yield": safe_get(info, "yield"),
+                    "ytd": returns.get("ytd"),
+                    "return_1y": returns.get("1y"),
+                    "return_3y": returns.get("3y"),
+                    "return_5y": returns.get("5y"),
+                    "price": safe_get(info, "previousClose"),
+                    "currency": safe_get(info, "currency", "USD"),
+                    "category": safe_get(info, "category", "-"),
+                }
+                print(f"  完了: {row['name']}")
+                break
 
-        # 名前
-        name = q.get("name") or ei.get("name") or ticker_str
+            except Exception as e:
+                print(f"  エラー（リトライ{attempt+1}）: {e}")
+                if attempt < 2:
+                    time.sleep(5)
 
-        row = {
-            "ticker": ticker_str,
-            "name": name,
-            "per": per,
-            "pbr": pbr,
-            "expense_ratio": expense,
-            "market_cap": market_cap,
-            "dividend_yield": dividend_yield,
-            "ytd": ytd_pct,
-            "return_1y": r1y_pct,
-            "return_3y": r3y_pct,
-            "return_5y": r5y_pct,
-            "price": price,
-            "currency": "USD",
-            "category": ei.get("assetClass") or q.get("sector") or "-",
-        }
-
-        has_data = price is not None or ytd_pct is not None
-        status = "✅" if has_data else "❌ データ無し"
-        print(f"  {ticker_str}: {name} → price={price}, ytd={ytd_pct} {status}")
+        if row is None:
+            print(f"  ⚠ {ticker_str}: 全リトライ失敗")
+            row = {
+                "ticker": ticker_str, "name": ticker_str,
+                "per": None, "pbr": None, "expense_ratio": None,
+                "market_cap": None, "dividend_yield": None,
+                "ytd": None, "return_1y": None,
+                "return_3y": None, "return_5y": None,
+                "price": None, "currency": "USD", "category": "-",
+            }
         etf_data.append(row)
-
     return etf_data
 
-
-# ====================================================================
-#  HTML生成
-# ====================================================================
 
 def color_cell(val):
     if val is None or val == "-":
@@ -367,22 +211,19 @@ def generate_html(etf_data):
         mc_val = float(d["market_cap"]) if d["market_cap"] is not None else 0
         mc_pct = (mc_val / max_mc * 100) if max_mc > 0 else 0
 
-        expense_str = fmt_pct(d['expense_ratio'], show_sign=False) if d['expense_ratio'] is not None else '-'
-        div_str = fmt_pct(d['dividend_yield'], show_sign=False) if d['dividend_yield'] is not None else '-'
-
         rows_html += f"""
         <tr data-idx="{i}" onclick="selectRow(this, {i})" title="{d.get('name','')}">
             <td class="ticker-cell sticky-col"><strong>{d['ticker']}</strong></td>
             <td>{fmt_num(d['price'], 2)}</td>
             <td>{fmt_num(d['per'], 1)}</td>
             <td>{fmt_num(d['pbr'], 2)}</td>
-            <td>{expense_str}</td>
+            <td>{fmt_pct(d['expense_ratio'], show_sign=False)}</td>
             <td class="mc-cell"><div class="mc-bar" style="width:{mc_pct:.1f}%"></div><span class="mc-label">{fmt_market_cap(d['market_cap'])}</span></td>
-            <td>{div_str}</td>
-            <td class="{color_cell(d['ytd'])}">{fmt_pct_raw(d['ytd'])}</td>
-            <td class="{color_cell(d['return_1y'])}">{fmt_pct_raw(d['return_1y'])}</td>
-            <td class="{color_cell(d['return_3y'])}">{fmt_pct_raw(d['return_3y'])}</td>
-            <td class="{color_cell(d['return_5y'])}">{fmt_pct_raw(d['return_5y'])}</td>
+            <td>{fmt_pct(d['dividend_yield'], show_sign=False)}</td>
+            <td class="{color_cell(d['ytd'])}">{fmt_pct(d['ytd'])}</td>
+            <td class="{color_cell(d['return_1y'])}">{fmt_pct(d['return_1y'])}</td>
+            <td class="{color_cell(d['return_3y'])}">{fmt_pct(d['return_3y'])}</td>
+            <td class="{color_cell(d['return_5y'])}">{fmt_pct(d['return_5y'])}</td>
         </tr>"""
 
     chart_data_list = []
@@ -390,10 +231,10 @@ def generate_html(etf_data):
         chart_data_list.append({
             "ticker": d["ticker"],
             "name": d.get("name", d["ticker"]),
-            "ytd": round(d["ytd"], 2) if d["ytd"] is not None else None,
-            "r1y": round(d["return_1y"], 2) if d["return_1y"] is not None else None,
-            "r3y": round(d["return_3y"], 2) if d["return_3y"] is not None else None,
-            "r5y": round(d["return_5y"], 2) if d["return_5y"] is not None else None,
+            "ytd": round(float(d["ytd"]) * 100, 2) if d["ytd"] is not None else None,
+            "r1y": round(float(d["return_1y"]) * 100, 2) if d["return_1y"] is not None else None,
+            "r3y": round(float(d["return_3y"]) * 100, 2) if d["return_3y"] is not None else None,
+            "r5y": round(float(d["return_5y"]) * 100, 2) if d["return_5y"] is not None else None,
         })
     chart_data_json = json.dumps(chart_data_list, ensure_ascii=False)
 
@@ -432,6 +273,8 @@ h1 {{
     margin-bottom: 6px;
     font-weight: 500;
 }}
+
+/* テーブル: ティッカー列固定 + 横スクロール */
 .table-wrapper {{
     overflow-x: auto;
     border-radius: 8px;
@@ -496,6 +339,8 @@ tbody tr.selected {{
 .ticker-cell {{ color: #0d47a1; font-weight: 900; font-size: 0.9rem; }}
 .positive {{ color: #d32f2f; font-weight: 900; }}
 .negative {{ color: #1565c0; font-weight: 900; }}
+
+/* 時価総額セル内バー */
 .mc-cell {{
     position: relative;
     padding: 5px 10px;
@@ -513,6 +358,8 @@ tbody tr.selected {{
     z-index: 1;
     font-weight: 800;
 }}
+
+/* チャート（全幅1カラム） */
 .chart-section {{
     background: #fff;
     border-radius: 8px;
@@ -548,6 +395,7 @@ canvas {{ max-width: 100%; }}
     min-height: 300px;
 }}
 .detail-placeholder svg {{ opacity: 0.3; }}
+
 footer {{
     text-align: center;
     font-size: 0.65rem;
@@ -601,7 +449,7 @@ footer {{
     </div>
 </div>
 
-<footer>データ出典: Financial Modeling Prep (FMP) ｜ 自動生成ツール</footer>
+<footer>データ出典: Yahoo Finance (yfinance) ｜ 自動生成ツール</footer>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
@@ -664,37 +512,18 @@ function selectRow(tr, idx) {{
     return html
 
 
-# ====================================================================
-#  メイン
-# ====================================================================
-
 def main():
-    print("=" * 60)
-    print("  ETF比較ダッシュボード 生成スクリプト")
-    print("  データソース: Financial Modeling Prep (FMP)")
-    print("=" * 60)
-
+    print("=" * 50)
+    print("ETF比較ダッシュボード 生成スクリプト")
+    print("=" * 50)
     etf_data = fetch_etf_data()
-
-    # 取得状況サマリー
-    ok = sum(1 for d in etf_data if d["price"] is not None)
-    print(f"\n📊 取得結果: {ok}/{len(etf_data)} 銘柄にデータあり")
-
-    if ok == 0:
-        print("\n⚠ 全銘柄のデータが取得できませんでした。")
-        print("  考えられる原因:")
-        print("  1. FMP_API_KEY が正しく設定されていない")
-        print("  2. FMPの無料プランでは一部シンボルのみ対応（AAPL, TSLA等の約100銘柄）")
-        print("  3. APIのレート制限に達した")
-        print("  → FMPダッシュボードでAPIキーとプランを確認してください")
-        print("  → https://financialmodelingprep.com/developer/docs/dashboard")
-
     html = generate_html(etf_data)
+    import os
     os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write(html)
     print(f"\n✅ 生成完了: {OUTPUT_FILE}")
-    print(f"   ETF数: {len(etf_data)}, データあり: {ok}")
+    print(f"   ETF数: {len(etf_data)}")
 
 
 if __name__ == "__main__":
