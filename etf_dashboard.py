@@ -40,6 +40,20 @@ def safe_get(info: dict, key: str, default=None):
     return default if val is None else val
 
 
+def debug_keys(info: dict, ticker: str):
+    """デバッグ用: ETFの経費率・PBR関連のキーを出力"""
+    keys_of_interest = [
+        "annualReportExpenseRatio", "expenseRatio", "annualHoldingsTurnover",
+        "priceToBook", "bookValue", "navPrice",
+        "trailingPE", "forwardPE",
+    ]
+    found = {k: info.get(k) for k in keys_of_interest if info.get(k) is not None}
+    if found:
+        print(f"  [{ticker}] 検出キー: {found}")
+    else:
+        print(f"  [{ticker}] 関連キー見つからず")
+
+
 def fmt_pct(val, show_sign=True):
     if val is None or val == "-":
         return "-"
@@ -113,13 +127,38 @@ def fetch_etf_data():
         try:
             tk = yf.Ticker(ticker_str)
             info = tk.info
+            debug_keys(info, ticker_str)
             returns = calc_returns(ticker_str)
+            # 経費率: 複数キーでフォールバック
+            expense = (safe_get(info, "annualReportExpenseRatio")
+                       or safe_get(info, "expenseRatio")
+                       or safe_get(info, "annualHoldingsTurnover"))
+            # 経費率がまだ取れない場合、fundProfileから探す
+            if expense is None:
+                try:
+                    fund_perf = tk.get_fund_data() if hasattr(tk, 'get_fund_data') else None
+                except Exception:
+                    fund_perf = None
+
+            # PBR: 複数キーでフォールバック
+            pbr = safe_get(info, "priceToBook")
+            if pbr is None:
+                # navPriceとbookValueから計算を試みる
+                nav = safe_get(info, "navPrice")
+                bv = safe_get(info, "bookValue")
+                if nav and bv and bv != 0:
+                    pbr = nav / bv
+
+            # PER: 複数キーでフォールバック
+            per = (safe_get(info, "trailingPE")
+                   or safe_get(info, "forwardPE"))
+
             row = {
                 "ticker": ticker_str,
                 "name": safe_get(info, "shortName", ticker_str),
-                "per": safe_get(info, "trailingPE"),
-                "pbr": safe_get(info, "priceToBook"),
-                "expense_ratio": safe_get(info, "annualReportExpenseRatio"),
+                "per": per,
+                "pbr": pbr,
+                "expense_ratio": expense,
                 "market_cap": safe_get(info, "totalAssets"),
                 "dividend_yield": safe_get(info, "yield"),
                 "ytd": returns.get("ytd"),
