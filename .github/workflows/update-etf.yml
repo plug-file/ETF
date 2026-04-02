@@ -19,10 +19,9 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: 依存パッケージインストール
-        run: pip install yfinance
-
       - name: ETFデータ取得 & HTML生成
+        env:
+          FMP_API_KEY: ${{ secrets.FMP_API_KEY }}
         run: python etf_dashboard.py
 
       - name: 変更をコミット & プッシュ
