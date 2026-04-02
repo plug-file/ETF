@@ -34,8 +34,6 @@ h1 {
     margin-bottom: 6px;
     font-weight: 500;
 }
-
-/* テーブル */
 .table-wrapper {
     overflow-x: auto;
     border-radius: 8px;
@@ -71,28 +69,37 @@ tbody tr {
     cursor: pointer;
     transition: background 0.15s;
 }
-tbody tr:hover {
-    background: #f0f4ff;
-}
-tbody tr:nth-child(even) {
-    background: #fafbfd;
-}
-tbody tr:nth-child(even):hover {
-    background: #e8eeff;
-}
+tbody tr:hover { background: #f0f4ff; }
+tbody tr:nth-child(even) { background: #fafbfd; }
+tbody tr:nth-child(even):hover { background: #e8eeff; }
 tbody tr.selected {
     background: #dce6ff !important;
     box-shadow: inset 3px 0 0 #0d47a1;
 }
-.ticker-cell {
-    color: #0d47a1;
-    font-weight: 900;
-    font-size: 0.9rem;
-}
+.ticker-cell { color: #0d47a1; font-weight: 900; font-size: 0.9rem; }
 .positive { color: #d32f2f; font-weight: 900; }
 .negative { color: #1565c0; font-weight: 900; }
 
-/* チャートセクション */
+/* 時価総額セル内バー */
+.mc-cell {
+    position: relative;
+    padding: 5px 8px;
+    min-width: 110px;
+}
+.mc-bar {
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    background: linear-gradient(90deg, rgba(54,162,235,0.22), rgba(54,162,235,0.06));
+    border-right: 2px solid rgba(54,162,235,0.45);
+    pointer-events: none;
+}
+.mc-label {
+    position: relative;
+    z-index: 1;
+    font-weight: 800;
+}
+
+/* チャート */
 .charts-grid {
     display: grid;
     grid-template-columns: 1fr 1fr;
@@ -112,22 +119,13 @@ tbody tr.selected {
     margin-bottom: 6px;
     text-align: center;
 }
-canvas {
-    max-width: 100%;
-}
-
-/* 円グラフ（大きく） */
-.pie-container {
+canvas { max-width: 100%; }
+.scatter-container {
     display: flex;
     justify-content: center;
     align-items: center;
     min-height: 400px;
 }
-.pie-container canvas {
-    max-height: 400px;
-}
-
-/* 個別チャートボックス */
 .detail-chart-container {
     display: flex;
     justify-content: center;
@@ -144,12 +142,9 @@ canvas {
     font-weight: 700;
     font-size: 0.9rem;
     gap: 8px;
-    height: 100%;
     min-height: 400px;
 }
-.detail-placeholder svg {
-    opacity: 0.3;
-}
+.detail-placeholder svg { opacity: 0.3; }
 #detailTitle {
     font-size: 0.9rem;
     font-weight: 800;
@@ -158,8 +153,6 @@ canvas {
     text-align: center;
     min-height: 1.2em;
 }
-
-/* フッター */
 footer {
     text-align: center;
     font-size: 0.65rem;
@@ -178,7 +171,7 @@ footer {
 <div class="container">
 
 <h1>ETF比較ダッシュボード</h1>
-<p class="update-time">最終更新: 2026年04月02日 05:44</p>
+<p class="update-time">最終更新: 2026年04月02日 06:04</p>
 
 <div class="table-wrapper">
 <table>
@@ -205,7 +198,7 @@ footer {
             <td>17.2</td>
             <td>2.50</td>
             <td>0.07%</td>
-            <td>$38.0B</td>
+            <td class="mc-cell"><div class="mc-bar" style="width:6.8%"></div><span class="mc-label">$38.0B</span></td>
             <td>1.95%</td>
             <td class="positive">+4.20%</td>
             <td class="positive">+11.20%</td>
@@ -218,7 +211,7 @@ footer {
             <td>22.8</td>
             <td>4.10</td>
             <td>0.03%</td>
-            <td>$420.0B</td>
+            <td class="mc-cell"><div class="mc-bar" style="width:75.0%"></div><span class="mc-label">$420.0B</span></td>
             <td>1.28%</td>
             <td class="positive">+3.50%</td>
             <td class="positive">+9.80%</td>
@@ -231,7 +224,7 @@ footer {
             <td>23.5</td>
             <td>4.50</td>
             <td>0.09%</td>
-            <td>$560.0B</td>
+            <td class="mc-cell"><div class="mc-bar" style="width:100.0%"></div><span class="mc-label">$560.0B</span></td>
             <td>1.22%</td>
             <td class="positive">+3.80%</td>
             <td class="positive">+10.50%</td>
@@ -244,7 +237,7 @@ footer {
             <td>14.2</td>
             <td>1.80</td>
             <td>0.08%</td>
-            <td>$22.0B</td>
+            <td class="mc-cell"><div class="mc-bar" style="width:3.9%"></div><span class="mc-label">$22.0B</span></td>
             <td>3.05%</td>
             <td class="positive">+14.80%</td>
             <td class="positive">+17.50%</td>
@@ -257,7 +250,7 @@ footer {
             <td>12.5</td>
             <td>1.30</td>
             <td>0.50%</td>
-            <td>$2.1B</td>
+            <td class="mc-cell"><div class="mc-bar" style="width:0.4%"></div><span class="mc-label">$2.1B</span></td>
             <td>2.85%</td>
             <td class="positive">+15.20%</td>
             <td class="positive">+18.90%</td>
@@ -270,7 +263,7 @@ footer {
             <td>8.2</td>
             <td>0.90</td>
             <td>0.59%</td>
-            <td>$320M</td>
+            <td class="mc-cell"><div class="mc-bar" style="width:0.1%"></div><span class="mc-label">$320M</span></td>
             <td>3.12%</td>
             <td class="positive">+8.20%</td>
             <td class="positive">+12.50%</td>
@@ -283,7 +276,7 @@ footer {
             <td>6.8</td>
             <td>1.10</td>
             <td>0.59%</td>
-            <td>$450M</td>
+            <td class="mc-cell"><div class="mc-bar" style="width:0.1%"></div><span class="mc-label">$450M</span></td>
             <td>1.89%</td>
             <td class="positive">+24.50%</td>
             <td class="positive">+31.20%</td>
@@ -296,7 +289,7 @@ footer {
             <td>7.5</td>
             <td>1.40</td>
             <td>0.59%</td>
-            <td>$4.8B</td>
+            <td class="mc-cell"><div class="mc-bar" style="width:0.9%"></div><span class="mc-label">$4.8B</span></td>
             <td>8.65%</td>
             <td class="negative">-6.80%</td>
             <td class="negative">-4.20%</td>
@@ -309,7 +302,7 @@ footer {
             <td>11.2</td>
             <td>2.10</td>
             <td>0.50%</td>
-            <td>$1.5B</td>
+            <td class="mc-cell"><div class="mc-bar" style="width:0.3%"></div><span class="mc-label">$1.5B</span></td>
             <td>2.45%</td>
             <td class="positive">+3.50%</td>
             <td class="positive">+7.80%</td>
@@ -322,7 +315,7 @@ footer {
             <td>18.5</td>
             <td>3.20</td>
             <td>0.85%</td>
-            <td>$2.9B</td>
+            <td class="mc-cell"><div class="mc-bar" style="width:0.5%"></div><span class="mc-label">$2.9B</span></td>
             <td>1.12%</td>
             <td class="positive">+6.80%</td>
             <td class="positive">+14.50%</td>
@@ -335,7 +328,7 @@ footer {
             <td>10.8</td>
             <td>1.60</td>
             <td>0.66%</td>
-            <td>$520M</td>
+            <td class="mc-cell"><div class="mc-bar" style="width:0.1%"></div><span class="mc-label">$520M</span></td>
             <td>0.98%</td>
             <td class="positive">+11.20%</td>
             <td class="positive">+6.80%</td>
@@ -348,7 +341,7 @@ footer {
             <td>14.2</td>
             <td>2.00</td>
             <td>0.59%</td>
-            <td>$580M</td>
+            <td class="mc-cell"><div class="mc-bar" style="width:0.1%"></div><span class="mc-label">$580M</span></td>
             <td>1.78%</td>
             <td class="negative">-2.50%</td>
             <td class="positive">+3.20%</td>
@@ -361,7 +354,7 @@ footer {
             <td>15.8</td>
             <td>1.50</td>
             <td>0.50%</td>
-            <td>$380M</td>
+            <td class="mc-cell"><div class="mc-bar" style="width:0.1%"></div><span class="mc-label">$380M</span></td>
             <td>3.25%</td>
             <td class="positive">+4.50%</td>
             <td class="positive">+5.80%</td>
@@ -374,7 +367,7 @@ footer {
             <td>17.5</td>
             <td>1.80</td>
             <td>0.59%</td>
-            <td>$420M</td>
+            <td class="mc-cell"><div class="mc-bar" style="width:0.1%"></div><span class="mc-label">$420M</span></td>
             <td>2.68%</td>
             <td class="negative">-3.50%</td>
             <td class="negative">-1.20%</td>
@@ -387,7 +380,7 @@ footer {
             <td>13.5</td>
             <td>1.40</td>
             <td>0.59%</td>
-            <td>$180M</td>
+            <td class="mc-cell"><div class="mc-bar" style="width:0.0%"></div><span class="mc-label">$180M</span></td>
             <td>1.45%</td>
             <td class="positive">+2.80%</td>
             <td class="positive">+1.50%</td>
@@ -400,7 +393,7 @@ footer {
             <td>-</td>
             <td>-</td>
             <td>0.40%</td>
-            <td>$72.0B</td>
+            <td class="mc-cell"><div class="mc-bar" style="width:12.9%"></div><span class="mc-label">$72.0B</span></td>
             <td>0.00%</td>
             <td class="positive">+19.50%</td>
             <td class="positive">+35.80%</td>
@@ -413,7 +406,7 @@ footer {
             <td>22.5</td>
             <td>2.80</td>
             <td>0.51%</td>
-            <td>$14.5B</td>
+            <td class="mc-cell"><div class="mc-bar" style="width:2.6%"></div><span class="mc-label">$14.5B</span></td>
             <td>1.62%</td>
             <td class="positive">+28.50%</td>
             <td class="positive">+42.50%</td>
@@ -426,7 +419,7 @@ footer {
             <td>28.5</td>
             <td>4.50</td>
             <td>0.44%</td>
-            <td>$7.2B</td>
+            <td class="mc-cell"><div class="mc-bar" style="width:1.3%"></div><span class="mc-label">$7.2B</span></td>
             <td>0.25%</td>
             <td class="negative">-4.50%</td>
             <td class="positive">+2.80%</td>
@@ -439,9 +432,9 @@ footer {
 
 <div class="charts-grid">
     <div class="chart-box">
-        <h3>時価総額 構成比</h3>
-        <div class="pie-container">
-            <canvas id="pieChart"></canvas>
+        <h3>配当利回り vs 経費率</h3>
+        <div class="scatter-container">
+            <canvas id="scatterChart"></canvas>
         </div>
     </div>
     <div class="chart-box">
@@ -456,147 +449,122 @@ footer {
     </div>
 </div>
 
-<footer>
-    データ出典: Yahoo Finance (yfinance) ｜ 自動生成ツール
-</footer>
-
+<footer>データ出典: Yahoo Finance (yfinance) ｜ 自動生成ツール</footer>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
-// ETFデータ
-const etfData = [{"ticker": "VT", "name": "Vanguard Total World Stock ETF", "ytd": 4.2, "r1y": 11.2, "r3y": 18.5, "r5y": 52.0, "per": 17.2, "pbr": 2.5, "expense": 0.07, "divyield": 1.95, "price": 112.35}, {"ticker": "VTI", "name": "Vanguard Total Stock Market ETF", "ytd": 3.5, "r1y": 9.8, "r3y": 24.5, "r5y": 78.0, "per": 22.8, "pbr": 4.1, "expense": 0.03, "divyield": 1.28, "price": 268.42}, {"ticker": "SPY", "name": "SPDR S&P 500 ETF Trust", "ytd": 3.8, "r1y": 10.5, "r3y": 25.8, "r5y": 81.5, "per": 23.5, "pbr": 4.5, "expense": 0.09, "divyield": 1.22, "price": 572.18}, {"ticker": "VGK", "name": "Vanguard FTSE Europe ETF", "ytd": 14.8, "r1y": 17.5, "r3y": 12.5, "r5y": 28.5, "per": 14.2, "pbr": 1.8, "expense": 0.08, "divyield": 3.05, "price": 68.92}, {"ticker": "EWG", "name": "iShares MSCI Germany ETF", "ytd": 15.2, "r1y": 18.9, "r3y": 9.8, "r5y": 14.2, "per": 12.5, "pbr": 1.3, "expense": 0.5, "divyield": 2.85, "price": 32.45}, {"ticker": "EPOL", "name": "iShares MSCI Poland ETF", "ytd": 8.2, "r1y": 12.5, "r3y": 21.5, "r5y": 6.8, "per": 8.2, "pbr": 0.9, "expense": 0.59, "divyield": 3.12, "price": 22.18}, {"ticker": "TUR", "name": "iShares MSCI Turkey ETF", "ytd": 24.5, "r1y": 31.2, "r3y": -14.8, "r5y": -35.2, "per": 6.8, "pbr": 1.1, "expense": 0.59, "divyield": 1.89, "price": 38.72}, {"ticker": "EWZ", "name": "iShares MSCI Brazil ETF", "ytd": -6.8, "r1y": -4.2, "r3y": -4.5, "r5y": -12.8, "per": 7.5, "pbr": 1.4, "expense": 0.59, "divyield": 8.65, "price": 28.31}, {"ticker": "EWW", "name": "iShares MSCI Mexico ETF", "ytd": 3.5, "r1y": 7.8, "r3y": 29.5, "r5y": 21.8, "per": 11.2, "pbr": 2.1, "expense": 0.5, "divyield": 2.45, "price": 52.64}, {"ticker": "EPI", "name": "WisdomTree India Earnings ETF", "ytd": 6.8, "r1y": 14.5, "r3y": 53.2, "r5y": 72.5, "per": 18.5, "pbr": 3.2, "expense": 0.85, "divyield": 1.12, "price": 38.92}, {"ticker": "VNM", "name": "VanEck Vietnam ETF", "ytd": 11.2, "r1y": 6.8, "r3y": -9.2, "r5y": 3.5, "per": 10.8, "pbr": 1.6, "expense": 0.66, "divyield": 0.98, "price": 14.25}, {"ticker": "EIDO", "name": "iShares MSCI Indonesia ETF", "ytd": -2.5, "r1y": 3.2, "r3y": -5.2, "r5y": -19.5, "per": 14.2, "pbr": 2.0, "expense": 0.59, "divyield": 1.78, "price": 22.85}, {"ticker": "EWM", "name": "iShares MSCI Malaysia ETF", "ytd": 4.5, "r1y": 5.8, "r3y": 3.5, "r5y": -6.8, "per": 15.8, "pbr": 1.5, "expense": 0.5, "divyield": 3.25, "price": 24.12}, {"ticker": "THD", "name": "iShares MSCI Thailand ETF", "ytd": -3.5, "r1y": -1.2, "r3y": -12.2, "r5y": -24.8, "per": 17.5, "pbr": 1.8, "expense": 0.59, "divyield": 2.68, "price": 68.45}, {"ticker": "EPHE", "name": "iShares MSCI Philippines ETF", "ytd": 2.8, "r1y": 1.5, "r3y": -18.5, "r5y": -31.5, "per": 13.5, "pbr": 1.4, "expense": 0.59, "divyield": 1.45, "price": 26.38}, {"ticker": "GLD", "name": "SPDR Gold Shares", "ytd": 19.5, "r1y": 35.8, "r3y": 42.5, "r5y": 68.5, "per": null, "pbr": null, "expense": 0.4, "divyield": 0.0, "price": 228.45}, {"ticker": "GDX", "name": "VanEck Gold Miners ETF", "ytd": 28.5, "r1y": 42.5, "r3y": 26.8, "r5y": 38.5, "per": 22.5, "pbr": 2.8, "expense": 0.51, "divyield": 1.62, "price": 45.82}, {"ticker": "IBB", "name": "iShares Biotechnology ETF", "ytd": -4.5, "r1y": 2.8, "r3y": -7.2, "r5y": 15.5, "per": 28.5, "pbr": 4.5, "expense": 0.44, "divyield": 0.25, "price": 132.58}];
+const etfData = [{"ticker": "VT", "name": "Vanguard Total World Stock ETF", "ytd": 4.2, "r1y": 11.2, "r3y": 18.5, "r5y": 52.0}, {"ticker": "VTI", "name": "Vanguard Total Stock Market ETF", "ytd": 3.5, "r1y": 9.8, "r3y": 24.5, "r5y": 78.0}, {"ticker": "SPY", "name": "SPDR S&P 500 ETF Trust", "ytd": 3.8, "r1y": 10.5, "r3y": 25.8, "r5y": 81.5}, {"ticker": "VGK", "name": "Vanguard FTSE Europe ETF", "ytd": 14.8, "r1y": 17.5, "r3y": 12.5, "r5y": 28.5}, {"ticker": "EWG", "name": "iShares MSCI Germany ETF", "ytd": 15.2, "r1y": 18.9, "r3y": 9.8, "r5y": 14.2}, {"ticker": "EPOL", "name": "iShares MSCI Poland ETF", "ytd": 8.2, "r1y": 12.5, "r3y": 21.5, "r5y": 6.8}, {"ticker": "TUR", "name": "iShares MSCI Turkey ETF", "ytd": 24.5, "r1y": 31.2, "r3y": -14.8, "r5y": -35.2}, {"ticker": "EWZ", "name": "iShares MSCI Brazil ETF", "ytd": -6.8, "r1y": -4.2, "r3y": -4.5, "r5y": -12.8}, {"ticker": "EWW", "name": "iShares MSCI Mexico ETF", "ytd": 3.5, "r1y": 7.8, "r3y": 29.5, "r5y": 21.8}, {"ticker": "EPI", "name": "WisdomTree India Earnings ETF", "ytd": 6.8, "r1y": 14.5, "r3y": 53.2, "r5y": 72.5}, {"ticker": "VNM", "name": "VanEck Vietnam ETF", "ytd": 11.2, "r1y": 6.8, "r3y": -9.2, "r5y": 3.5}, {"ticker": "EIDO", "name": "iShares MSCI Indonesia ETF", "ytd": -2.5, "r1y": 3.2, "r3y": -5.2, "r5y": -19.5}, {"ticker": "EWM", "name": "iShares MSCI Malaysia ETF", "ytd": 4.5, "r1y": 5.8, "r3y": 3.5, "r5y": -6.8}, {"ticker": "THD", "name": "iShares MSCI Thailand ETF", "ytd": -3.5, "r1y": -1.2, "r3y": -12.2, "r5y": -24.8}, {"ticker": "EPHE", "name": "iShares MSCI Philippines ETF", "ytd": 2.8, "r1y": 1.5, "r3y": -18.5, "r5y": -31.5}, {"ticker": "GLD", "name": "SPDR Gold Shares", "ytd": 19.5, "r1y": 35.8, "r3y": 42.5, "r5y": 68.5}, {"ticker": "GDX", "name": "VanEck Gold Miners ETF", "ytd": 28.5, "r1y": 42.5, "r3y": 26.8, "r5y": 38.5}, {"ticker": "IBB", "name": "iShares Biotechnology ETF", "ytd": -4.5, "r1y": 2.8, "r3y": -7.2, "r5y": 15.5}];
 
-// 円グラフ
-const pieData = [{"label": "VT", "value": 3.3, "color": "#FF6384"}, {"label": "VTI", "value": 36.6, "color": "#36A2EB"}, {"label": "SPY", "value": 48.8, "color": "#FFCE56"}, {"label": "VGK", "value": 1.9, "color": "#4BC0C0"}, {"label": "EWG", "value": 0.2, "color": "#9966FF"}, {"label": "EPOL", "value": 0.0, "color": "#FF9F40"}, {"label": "TUR", "value": 0.0, "color": "#66BB6A"}, {"label": "EWZ", "value": 0.4, "color": "#7BC8A4"}, {"label": "EWW", "value": 0.1, "color": "#F67019"}, {"label": "EPI", "value": 0.3, "color": "#4DC9F6"}, {"label": "VNM", "value": 0.0, "color": "#ACC236"}, {"label": "EIDO", "value": 0.1, "color": "#FF5A5E"}, {"label": "EWM", "value": 0.0, "color": "#C9CB3F"}, {"label": "THD", "value": 0.0, "color": "#8B5CF6"}, {"label": "EPHE", "value": 0.0, "color": "#EC4899"}, {"label": "GLD", "value": 6.3, "color": "#F59E0B"}, {"label": "GDX", "value": 1.3, "color": "#10B981"}, {"label": "IBB", "value": 0.6, "color": "#6366F1"}];
-new Chart(document.getElementById('pieChart'), {
-    type: 'pie',
+// === 散布図 ===
+const scatterRaw = [{"ticker": "VT", "x": 0.07, "y": 1.95, "color": "#FF6384"}, {"ticker": "VTI", "x": 0.03, "y": 1.28, "color": "#36A2EB"}, {"ticker": "SPY", "x": 0.09, "y": 1.22, "color": "#FFCE56"}, {"ticker": "VGK", "x": 0.08, "y": 3.05, "color": "#4BC0C0"}, {"ticker": "EWG", "x": 0.5, "y": 2.85, "color": "#9966FF"}, {"ticker": "EPOL", "x": 0.59, "y": 3.12, "color": "#FF9F40"}, {"ticker": "TUR", "x": 0.59, "y": 1.89, "color": "#66BB6A"}, {"ticker": "EWZ", "x": 0.59, "y": 8.65, "color": "#7BC8A4"}, {"ticker": "EWW", "x": 0.5, "y": 2.45, "color": "#F67019"}, {"ticker": "EPI", "x": 0.85, "y": 1.12, "color": "#4DC9F6"}, {"ticker": "VNM", "x": 0.66, "y": 0.98, "color": "#ACC236"}, {"ticker": "EIDO", "x": 0.59, "y": 1.78, "color": "#FF5A5E"}, {"ticker": "EWM", "x": 0.5, "y": 3.25, "color": "#C9CB3F"}, {"ticker": "THD", "x": 0.59, "y": 2.68, "color": "#8B5CF6"}, {"ticker": "EPHE", "x": 0.59, "y": 1.45, "color": "#EC4899"}, {"ticker": "GLD", "x": 0.4, "y": 0.0, "color": "#F59E0B"}, {"ticker": "GDX", "x": 0.51, "y": 1.62, "color": "#10B981"}, {"ticker": "IBB", "x": 0.44, "y": 0.25, "color": "#6366F1"}];
+new Chart(document.getElementById('scatterChart'), {
+    type: 'scatter',
     data: {
-        labels: pieData.map(d => d.label + ' (' + d.value + '%)'),
-        datasets: [{
-            data: pieData.map(d => d.value),
-            backgroundColor: pieData.map(d => d.color),
-            borderWidth: 2,
-            borderColor: '#fff',
-        }]
+        datasets: scatterRaw.map(d => ({
+            label: d.ticker,
+            data: [{ x: d.x, y: d.y }],
+            backgroundColor: d.color,
+            borderColor: d.color,
+            pointRadius: 7,
+            pointHoverRadius: 10,
+        }))
     },
     options: {
         responsive: true,
         maintainAspectRatio: false,
+        scales: {
+            x: {
+                title: { display: true, text: '経費率 (%)', font: { weight: 'bold', size: 13 }, color: '#333' },
+                ticks: { callback: v => v.toFixed(2) + '%', font: { weight: 'bold', size: 11 } },
+                grid: { color: '#f0f0f0' },
+                min: 0,
+            },
+            y: {
+                title: { display: true, text: '配当利回り (%)', font: { weight: 'bold', size: 13 }, color: '#333' },
+                ticks: { callback: v => v.toFixed(1) + '%', font: { weight: 'bold', size: 11 } },
+                grid: { color: '#f0f0f0' },
+                min: 0,
+            }
+        },
         plugins: {
             legend: {
-                position: 'right',
-                labels: {
-                    font: { size: 12, weight: 'bold' },
-                    padding: 8,
-                    usePointStyle: true,
-                    pointStyleWidth: 12,
-                }
+                position: 'bottom',
+                labels: { font: { size: 11, weight: 'bold' }, padding: 6, usePointStyle: true, pointStyleWidth: 10 }
+            },
+            tooltip: {
+                callbacks: {
+                    label: ctx => ctx.dataset.label + ' : 経費率 ' + ctx.raw.x.toFixed(2) + '% / 配当 ' + ctx.raw.y.toFixed(2) + '%'
+                },
+                titleFont: { weight: 'bold', size: 13 },
+                bodyFont: { weight: 'bold', size: 12 },
             }
         }
-    }
+    },
+    plugins: [{
+        afterDraw(chart) {
+            const ctx = chart.ctx;
+            chart.data.datasets.forEach((ds, i) => {
+                const meta = chart.getDatasetMeta(i);
+                if (meta.data.length > 0) {
+                    const pt = meta.data[0];
+                    ctx.save();
+                    ctx.font = 'bold 11px sans-serif';
+                    ctx.fillStyle = '#444';
+                    ctx.textAlign = 'left';
+                    ctx.textBaseline = 'bottom';
+                    ctx.fillText(ds.label, pt.x + 10, pt.y - 2);
+                    ctx.restore();
+                }
+            });
+        }
+    }]
 });
 
-// 個別ETF詳細チャート
+// === 個別ETF詳細チャート ===
 let detailChartInstance = null;
-
 function selectRow(tr, idx) {
-    // 選択状態の切り替え
     document.querySelectorAll('tbody tr').forEach(r => r.classList.remove('selected'));
     tr.classList.add('selected');
-
     const d = etfData[idx];
-    const placeholder = document.getElementById('detailPlaceholder');
+    document.getElementById('detailPlaceholder').style.display = 'none';
     const canvas = document.getElementById('detailChart');
-    const title = document.getElementById('detailTitle');
-
-    placeholder.style.display = 'none';
     canvas.style.display = 'block';
-    title.textContent = d.ticker + '　' + d.name;
+    document.getElementById('detailTitle').textContent = d.ticker + '　' + d.name;
+    if (detailChartInstance) detailChartInstance.destroy();
 
-    // 既存チャートを破棄
-    if (detailChartInstance) {
-        detailChartInstance.destroy();
-    }
-
-    // リターン棒グラフ + 指標レーダー的な表示
     const labels = ['YTD', '1年', '3年', '5年'];
     const values = [d.ytd, d.r1y, d.r3y, d.r5y];
-    const bgColors = values.map(v => {
-        if (v === null) return '#ddd';
-        return v >= 0 ? 'rgba(211, 47, 47, 0.65)' : 'rgba(21, 101, 192, 0.65)';
-    });
-    const borderColors = values.map(v => {
-        if (v === null) return '#ccc';
-        return v >= 0 ? '#d32f2f' : '#1565c0';
-    });
+    const bgColors = values.map(v => v === null ? '#ddd' : v >= 0 ? 'rgba(211,47,47,0.65)' : 'rgba(21,101,192,0.65)');
+    const borderColors = values.map(v => v === null ? '#ccc' : v >= 0 ? '#d32f2f' : '#1565c0');
 
     detailChartInstance = new Chart(canvas, {
         type: 'bar',
-        data: {
-            labels: labels,
-            datasets: [{
-                label: 'リターン (%)',
-                data: values.map(v => v !== null ? v : 0),
-                backgroundColor: bgColors,
-                borderColor: borderColors,
-                borderWidth: 2,
-                borderRadius: 4,
-            }]
-        },
+        data: { labels, datasets: [{ label: 'リターン (%)', data: values.map(v => v ?? 0), backgroundColor: bgColors, borderColor: borderColors, borderWidth: 2, borderRadius: 4 }] },
         options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            indexAxis: 'y',
+            responsive: true, maintainAspectRatio: false, indexAxis: 'y',
             scales: {
-                x: {
-                    ticks: {
-                        callback: v => v + '%',
-                        font: { weight: 'bold', size: 12 }
-                    },
-                    grid: { color: '#f0f0f0' }
-                },
-                y: {
-                    ticks: { font: { weight: 'bold', size: 13 } },
-                    grid: { display: false }
-                }
+                x: { ticks: { callback: v => v + '%', font: { weight: 'bold', size: 12 } }, grid: { color: '#f0f0f0' } },
+                y: { ticks: { font: { weight: 'bold', size: 13 } }, grid: { display: false } }
             },
             plugins: {
                 legend: { display: false },
-                tooltip: {
-                    callbacks: {
-                        label: ctx => {
-                            const v = ctx.raw;
-                            const sign = v > 0 ? '+' : '';
-                            return sign + v.toFixed(2) + '%';
-                        }
-                    },
-                    titleFont: { weight: 'bold', size: 13 },
-                    bodyFont: { weight: 'bold', size: 13 },
-                },
-                // データラベル表示（Chart.js本体のみで実装）
+                tooltip: { callbacks: { label: ctx => (ctx.raw > 0 ? '+' : '') + ctx.raw.toFixed(2) + '%' }, titleFont: { weight: 'bold', size: 13 }, bodyFont: { weight: 'bold', size: 13 } },
             },
-            animation: {
-                duration: 400,
-                easing: 'easeOutQuart'
-            }
+            animation: { duration: 400, easing: 'easeOutQuart' }
         },
         plugins: [{
-            // インラインプラグイン: バーの横に値を表示
             afterDraw(chart) {
                 const ctx = chart.ctx;
                 chart.data.datasets[0].data.forEach((val, i) => {
-                    const meta = chart.getDatasetMeta(0);
-                    const bar = meta.data[i];
-                    const sign = val > 0 ? '+' : '';
-                    const text = sign + val.toFixed(2) + '%';
+                    const bar = chart.getDatasetMeta(0).data[i];
+                    const text = (val > 0 ? '+' : '') + val.toFixed(2) + '%';
                     ctx.save();
                     ctx.font = 'bold 13px sans-serif';
                     ctx.fillStyle = val >= 0 ? '#d32f2f' : '#1565c0';
                     ctx.textAlign = val >= 0 ? 'left' : 'right';
                     ctx.textBaseline = 'middle';
-                    const xPos = val >= 0 ? bar.x + 6 : bar.x - 6;
-                    ctx.fillText(text, xPos, bar.y);
+                    ctx.fillText(text, val >= 0 ? bar.x + 6 : bar.x - 6, bar.y);
                     ctx.restore();
                 });
             }
