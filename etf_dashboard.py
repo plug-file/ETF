@@ -93,9 +93,9 @@ def fmt_market_cap(val):
         return "-"
 
 
-def calc_returns(ticker_str):
+def calc_returns(tk):
+    """既存のTickerオブジェクトからリターンを計算（追加のAPI呼び出しを避ける）"""
     try:
-        tk = yf.Ticker(ticker_str)
         hist = tk.history(period="5y")
         if hist.empty:
             return {}
@@ -116,7 +116,7 @@ def calc_returns(ticker_str):
 
         return returns
     except Exception as e:
-        print(f"  リターン計算エラー ({ticker_str}): {e}")
+        print(f"  リターン計算エラー: {e}")
         return {}
 
 
@@ -128,30 +128,19 @@ def fetch_etf_data():
             tk = yf.Ticker(ticker_str)
             info = tk.info
             debug_keys(info, ticker_str)
-            returns = calc_returns(ticker_str)
+
+            # 同じTickerオブジェクトでリターン計算（余計なAPI呼び出しを避ける）
+            returns = calc_returns(tk)
             # 経費率: 複数キーでフォールバック
             expense = (safe_get(info, "annualReportExpenseRatio")
                        or safe_get(info, "expenseRatio")
                        or safe_get(info, "annualHoldingsTurnover"))
-            # 経費率がまだ取れない場合、fundProfileから探す
-            if expense is None:
-                try:
-                    fund_perf = tk.get_fund_data() if hasattr(tk, 'get_fund_data') else None
-                except Exception:
-                    fund_perf = None
 
-            # PBR: 複数キーでフォールバック
+            # PBR
             pbr = safe_get(info, "priceToBook")
-            if pbr is None:
-                # navPriceとbookValueから計算を試みる
-                nav = safe_get(info, "navPrice")
-                bv = safe_get(info, "bookValue")
-                if nav and bv and bv != 0:
-                    pbr = nav / bv
 
-            # PER: 複数キーでフォールバック
-            per = (safe_get(info, "trailingPE")
-                   or safe_get(info, "forwardPE"))
+            # PER
+            per = safe_get(info, "trailingPE") or safe_get(info, "forwardPE")
 
             row = {
                 "ticker": ticker_str,
