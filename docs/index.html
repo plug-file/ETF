@@ -178,7 +178,7 @@ footer {
 <div class="container">
 
 <h1>ETF比較ダッシュボード</h1>
-<p class="update-time">最終更新: 2026年04月02日 05:33</p>
+<p class="update-time">最終更新: 2026年04月02日 05:44</p>
 
 <div class="table-wrapper">
 <table>
@@ -193,13 +193,65 @@ footer {
     <th>配当利回り</th>
     <th>YTD</th>
     <th>1年</th>
-    <th>3年(年率)</th>
-    <th>5年(年率)</th>
+    <th>3年</th>
+    <th>5年</th>
 </tr>
 </thead>
 <tbody>
 
-        <tr data-idx="0" onclick="selectRow(this, 0)" title="iShares MSCI Germany ETF">
+        <tr data-idx="0" onclick="selectRow(this, 0)" title="Vanguard Total World Stock ETF">
+            <td class="ticker-cell"><strong>VT</strong></td>
+            <td>112.35</td>
+            <td>17.2</td>
+            <td>2.50</td>
+            <td>0.07%</td>
+            <td>$38.0B</td>
+            <td>1.95%</td>
+            <td class="positive">+4.20%</td>
+            <td class="positive">+11.20%</td>
+            <td class="positive">+18.50%</td>
+            <td class="positive">+52.00%</td>
+        </tr>
+        <tr data-idx="1" onclick="selectRow(this, 1)" title="Vanguard Total Stock Market ETF">
+            <td class="ticker-cell"><strong>VTI</strong></td>
+            <td>268.42</td>
+            <td>22.8</td>
+            <td>4.10</td>
+            <td>0.03%</td>
+            <td>$420.0B</td>
+            <td>1.28%</td>
+            <td class="positive">+3.50%</td>
+            <td class="positive">+9.80%</td>
+            <td class="positive">+24.50%</td>
+            <td class="positive">+78.00%</td>
+        </tr>
+        <tr data-idx="2" onclick="selectRow(this, 2)" title="SPDR S&P 500 ETF Trust">
+            <td class="ticker-cell"><strong>SPY</strong></td>
+            <td>572.18</td>
+            <td>23.5</td>
+            <td>4.50</td>
+            <td>0.09%</td>
+            <td>$560.0B</td>
+            <td>1.22%</td>
+            <td class="positive">+3.80%</td>
+            <td class="positive">+10.50%</td>
+            <td class="positive">+25.80%</td>
+            <td class="positive">+81.50%</td>
+        </tr>
+        <tr data-idx="3" onclick="selectRow(this, 3)" title="Vanguard FTSE Europe ETF">
+            <td class="ticker-cell"><strong>VGK</strong></td>
+            <td>68.92</td>
+            <td>14.2</td>
+            <td>1.80</td>
+            <td>0.08%</td>
+            <td>$22.0B</td>
+            <td>3.05%</td>
+            <td class="positive">+14.80%</td>
+            <td class="positive">+17.50%</td>
+            <td class="positive">+12.50%</td>
+            <td class="positive">+28.50%</td>
+        </tr>
+        <tr data-idx="4" onclick="selectRow(this, 4)" title="iShares MSCI Germany ETF">
             <td class="ticker-cell"><strong>EWG</strong></td>
             <td>32.45</td>
             <td>12.5</td>
@@ -209,10 +261,10 @@ footer {
             <td>2.85%</td>
             <td class="positive">+15.20%</td>
             <td class="positive">+18.90%</td>
-            <td class="positive">+4.50%</td>
-            <td class="positive">+3.20%</td>
+            <td class="positive">+9.80%</td>
+            <td class="positive">+14.20%</td>
         </tr>
-        <tr data-idx="1" onclick="selectRow(this, 1)" title="iShares MSCI Poland ETF">
+        <tr data-idx="5" onclick="selectRow(this, 5)" title="iShares MSCI Poland ETF">
             <td class="ticker-cell"><strong>EPOL</strong></td>
             <td>22.18</td>
             <td>8.2</td>
@@ -222,10 +274,10 @@ footer {
             <td>3.12%</td>
             <td class="positive">+8.20%</td>
             <td class="positive">+12.50%</td>
+            <td class="positive">+21.50%</td>
             <td class="positive">+6.80%</td>
-            <td class="positive">+1.50%</td>
         </tr>
-        <tr data-idx="2" onclick="selectRow(this, 2)" title="iShares MSCI Turkey ETF">
+        <tr data-idx="6" onclick="selectRow(this, 6)" title="iShares MSCI Turkey ETF">
             <td class="ticker-cell"><strong>TUR</strong></td>
             <td>38.72</td>
             <td>6.8</td>
@@ -235,10 +287,10 @@ footer {
             <td>1.89%</td>
             <td class="positive">+24.50%</td>
             <td class="positive">+31.20%</td>
-            <td class="negative">-5.20%</td>
-            <td class="negative">-8.50%</td>
+            <td class="negative">-14.80%</td>
+            <td class="negative">-35.20%</td>
         </tr>
-        <tr data-idx="3" onclick="selectRow(this, 3)" title="iShares MSCI Brazil ETF">
+        <tr data-idx="7" onclick="selectRow(this, 7)" title="iShares MSCI Brazil ETF">
             <td class="ticker-cell"><strong>EWZ</strong></td>
             <td>28.31</td>
             <td>7.5</td>
@@ -248,10 +300,10 @@ footer {
             <td>8.65%</td>
             <td class="negative">-6.80%</td>
             <td class="negative">-4.20%</td>
-            <td class="negative">-1.50%</td>
-            <td class="negative">-2.80%</td>
+            <td class="negative">-4.50%</td>
+            <td class="negative">-12.80%</td>
         </tr>
-        <tr data-idx="4" onclick="selectRow(this, 4)" title="iShares MSCI Mexico ETF">
+        <tr data-idx="8" onclick="selectRow(this, 8)" title="iShares MSCI Mexico ETF">
             <td class="ticker-cell"><strong>EWW</strong></td>
             <td>52.64</td>
             <td>11.2</td>
@@ -261,10 +313,10 @@ footer {
             <td>2.45%</td>
             <td class="positive">+3.50%</td>
             <td class="positive">+7.80%</td>
-            <td class="positive">+9.20%</td>
-            <td class="positive">+4.80%</td>
+            <td class="positive">+29.50%</td>
+            <td class="positive">+21.80%</td>
         </tr>
-        <tr data-idx="5" onclick="selectRow(this, 5)" title="WisdomTree India Earnings ETF">
+        <tr data-idx="9" onclick="selectRow(this, 9)" title="WisdomTree India Earnings ETF">
             <td class="ticker-cell"><strong>EPI</strong></td>
             <td>38.92</td>
             <td>18.5</td>
@@ -274,10 +326,10 @@ footer {
             <td>1.12%</td>
             <td class="positive">+6.80%</td>
             <td class="positive">+14.50%</td>
-            <td class="positive">+15.20%</td>
-            <td class="positive">+11.80%</td>
+            <td class="positive">+53.20%</td>
+            <td class="positive">+72.50%</td>
         </tr>
-        <tr data-idx="6" onclick="selectRow(this, 6)" title="VanEck Vietnam ETF">
+        <tr data-idx="10" onclick="selectRow(this, 10)" title="VanEck Vietnam ETF">
             <td class="ticker-cell"><strong>VNM</strong></td>
             <td>14.25</td>
             <td>10.8</td>
@@ -287,10 +339,10 @@ footer {
             <td>0.98%</td>
             <td class="positive">+11.20%</td>
             <td class="positive">+6.80%</td>
-            <td class="negative">-3.20%</td>
-            <td class="positive">+0.80%</td>
+            <td class="negative">-9.20%</td>
+            <td class="positive">+3.50%</td>
         </tr>
-        <tr data-idx="7" onclick="selectRow(this, 7)" title="iShares MSCI Indonesia ETF">
+        <tr data-idx="11" onclick="selectRow(this, 11)" title="iShares MSCI Indonesia ETF">
             <td class="ticker-cell"><strong>EIDO</strong></td>
             <td>22.85</td>
             <td>14.2</td>
@@ -300,10 +352,10 @@ footer {
             <td>1.78%</td>
             <td class="negative">-2.50%</td>
             <td class="positive">+3.20%</td>
-            <td class="negative">-1.80%</td>
-            <td class="negative">-4.50%</td>
+            <td class="negative">-5.20%</td>
+            <td class="negative">-19.50%</td>
         </tr>
-        <tr data-idx="8" onclick="selectRow(this, 8)" title="iShares MSCI Malaysia ETF">
+        <tr data-idx="12" onclick="selectRow(this, 12)" title="iShares MSCI Malaysia ETF">
             <td class="ticker-cell"><strong>EWM</strong></td>
             <td>24.12</td>
             <td>15.8</td>
@@ -313,10 +365,10 @@ footer {
             <td>3.25%</td>
             <td class="positive">+4.50%</td>
             <td class="positive">+5.80%</td>
-            <td class="positive">+1.20%</td>
-            <td class="negative">-1.50%</td>
+            <td class="positive">+3.50%</td>
+            <td class="negative">-6.80%</td>
         </tr>
-        <tr data-idx="9" onclick="selectRow(this, 9)" title="iShares MSCI Thailand ETF">
+        <tr data-idx="13" onclick="selectRow(this, 13)" title="iShares MSCI Thailand ETF">
             <td class="ticker-cell"><strong>THD</strong></td>
             <td>68.45</td>
             <td>17.5</td>
@@ -326,10 +378,10 @@ footer {
             <td>2.68%</td>
             <td class="negative">-3.50%</td>
             <td class="negative">-1.20%</td>
-            <td class="negative">-4.20%</td>
-            <td class="negative">-5.80%</td>
+            <td class="negative">-12.20%</td>
+            <td class="negative">-24.80%</td>
         </tr>
-        <tr data-idx="10" onclick="selectRow(this, 10)" title="iShares MSCI Philippines ETF">
+        <tr data-idx="14" onclick="selectRow(this, 14)" title="iShares MSCI Philippines ETF">
             <td class="ticker-cell"><strong>EPHE</strong></td>
             <td>26.38</td>
             <td>13.5</td>
@@ -339,10 +391,23 @@ footer {
             <td>1.45%</td>
             <td class="positive">+2.80%</td>
             <td class="positive">+1.50%</td>
-            <td class="negative">-6.50%</td>
-            <td class="negative">-7.80%</td>
+            <td class="negative">-18.50%</td>
+            <td class="negative">-31.50%</td>
         </tr>
-        <tr data-idx="11" onclick="selectRow(this, 11)" title="VanEck Gold Miners ETF">
+        <tr data-idx="15" onclick="selectRow(this, 15)" title="SPDR Gold Shares">
+            <td class="ticker-cell"><strong>GLD</strong></td>
+            <td>228.45</td>
+            <td>-</td>
+            <td>-</td>
+            <td>0.40%</td>
+            <td>$72.0B</td>
+            <td>0.00%</td>
+            <td class="positive">+19.50%</td>
+            <td class="positive">+35.80%</td>
+            <td class="positive">+42.50%</td>
+            <td class="positive">+68.50%</td>
+        </tr>
+        <tr data-idx="16" onclick="selectRow(this, 16)" title="VanEck Gold Miners ETF">
             <td class="ticker-cell"><strong>GDX</strong></td>
             <td>45.82</td>
             <td>22.5</td>
@@ -352,10 +417,10 @@ footer {
             <td>1.62%</td>
             <td class="positive">+28.50%</td>
             <td class="positive">+42.50%</td>
-            <td class="positive">+8.20%</td>
-            <td class="positive">+9.50%</td>
+            <td class="positive">+26.80%</td>
+            <td class="positive">+38.50%</td>
         </tr>
-        <tr data-idx="12" onclick="selectRow(this, 12)" title="iShares Biotechnology ETF">
+        <tr data-idx="17" onclick="selectRow(this, 17)" title="iShares Biotechnology ETF">
             <td class="ticker-cell"><strong>IBB</strong></td>
             <td>132.58</td>
             <td>28.5</td>
@@ -365,8 +430,8 @@ footer {
             <td>0.25%</td>
             <td class="negative">-4.50%</td>
             <td class="positive">+2.80%</td>
-            <td class="negative">-2.50%</td>
-            <td class="positive">+3.50%</td>
+            <td class="negative">-7.20%</td>
+            <td class="positive">+15.50%</td>
         </tr>
 </tbody>
 </table>
@@ -400,10 +465,10 @@ footer {
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
 // ETFデータ
-const etfData = [{"ticker": "EWG", "name": "iShares MSCI Germany ETF", "ytd": 15.2, "r1y": 18.9, "r3y": 4.5, "r5y": 3.2, "per": 12.5, "pbr": 1.3, "expense": 0.5, "divyield": 2.85, "price": 32.45}, {"ticker": "EPOL", "name": "iShares MSCI Poland ETF", "ytd": 8.2, "r1y": 12.5, "r3y": 6.8, "r5y": 1.5, "per": 8.2, "pbr": 0.9, "expense": 0.59, "divyield": 3.12, "price": 22.18}, {"ticker": "TUR", "name": "iShares MSCI Turkey ETF", "ytd": 24.5, "r1y": 31.2, "r3y": -5.2, "r5y": -8.5, "per": 6.8, "pbr": 1.1, "expense": 0.59, "divyield": 1.89, "price": 38.72}, {"ticker": "EWZ", "name": "iShares MSCI Brazil ETF", "ytd": -6.8, "r1y": -4.2, "r3y": -1.5, "r5y": -2.8, "per": 7.5, "pbr": 1.4, "expense": 0.59, "divyield": 8.65, "price": 28.31}, {"ticker": "EWW", "name": "iShares MSCI Mexico ETF", "ytd": 3.5, "r1y": 7.8, "r3y": 9.2, "r5y": 4.8, "per": 11.2, "pbr": 2.1, "expense": 0.5, "divyield": 2.45, "price": 52.64}, {"ticker": "EPI", "name": "WisdomTree India Earnings ETF", "ytd": 6.8, "r1y": 14.5, "r3y": 15.2, "r5y": 11.8, "per": 18.5, "pbr": 3.2, "expense": 0.85, "divyield": 1.12, "price": 38.92}, {"ticker": "VNM", "name": "VanEck Vietnam ETF", "ytd": 11.2, "r1y": 6.8, "r3y": -3.2, "r5y": 0.8, "per": 10.8, "pbr": 1.6, "expense": 0.66, "divyield": 0.98, "price": 14.25}, {"ticker": "EIDO", "name": "iShares MSCI Indonesia ETF", "ytd": -2.5, "r1y": 3.2, "r3y": -1.8, "r5y": -4.5, "per": 14.2, "pbr": 2.0, "expense": 0.59, "divyield": 1.78, "price": 22.85}, {"ticker": "EWM", "name": "iShares MSCI Malaysia ETF", "ytd": 4.5, "r1y": 5.8, "r3y": 1.2, "r5y": -1.5, "per": 15.8, "pbr": 1.5, "expense": 0.5, "divyield": 3.25, "price": 24.12}, {"ticker": "THD", "name": "iShares MSCI Thailand ETF", "ytd": -3.5, "r1y": -1.2, "r3y": -4.2, "r5y": -5.8, "per": 17.5, "pbr": 1.8, "expense": 0.59, "divyield": 2.68, "price": 68.45}, {"ticker": "EPHE", "name": "iShares MSCI Philippines ETF", "ytd": 2.8, "r1y": 1.5, "r3y": -6.5, "r5y": -7.8, "per": 13.5, "pbr": 1.4, "expense": 0.59, "divyield": 1.45, "price": 26.38}, {"ticker": "GDX", "name": "VanEck Gold Miners ETF", "ytd": 28.5, "r1y": 42.5, "r3y": 8.2, "r5y": 9.5, "per": 22.5, "pbr": 2.8, "expense": 0.51, "divyield": 1.62, "price": 45.82}, {"ticker": "IBB", "name": "iShares Biotechnology ETF", "ytd": -4.5, "r1y": 2.8, "r3y": -2.5, "r5y": 3.5, "per": 28.5, "pbr": 4.5, "expense": 0.44, "divyield": 0.25, "price": 132.58}];
+const etfData = [{"ticker": "VT", "name": "Vanguard Total World Stock ETF", "ytd": 4.2, "r1y": 11.2, "r3y": 18.5, "r5y": 52.0, "per": 17.2, "pbr": 2.5, "expense": 0.07, "divyield": 1.95, "price": 112.35}, {"ticker": "VTI", "name": "Vanguard Total Stock Market ETF", "ytd": 3.5, "r1y": 9.8, "r3y": 24.5, "r5y": 78.0, "per": 22.8, "pbr": 4.1, "expense": 0.03, "divyield": 1.28, "price": 268.42}, {"ticker": "SPY", "name": "SPDR S&P 500 ETF Trust", "ytd": 3.8, "r1y": 10.5, "r3y": 25.8, "r5y": 81.5, "per": 23.5, "pbr": 4.5, "expense": 0.09, "divyield": 1.22, "price": 572.18}, {"ticker": "VGK", "name": "Vanguard FTSE Europe ETF", "ytd": 14.8, "r1y": 17.5, "r3y": 12.5, "r5y": 28.5, "per": 14.2, "pbr": 1.8, "expense": 0.08, "divyield": 3.05, "price": 68.92}, {"ticker": "EWG", "name": "iShares MSCI Germany ETF", "ytd": 15.2, "r1y": 18.9, "r3y": 9.8, "r5y": 14.2, "per": 12.5, "pbr": 1.3, "expense": 0.5, "divyield": 2.85, "price": 32.45}, {"ticker": "EPOL", "name": "iShares MSCI Poland ETF", "ytd": 8.2, "r1y": 12.5, "r3y": 21.5, "r5y": 6.8, "per": 8.2, "pbr": 0.9, "expense": 0.59, "divyield": 3.12, "price": 22.18}, {"ticker": "TUR", "name": "iShares MSCI Turkey ETF", "ytd": 24.5, "r1y": 31.2, "r3y": -14.8, "r5y": -35.2, "per": 6.8, "pbr": 1.1, "expense": 0.59, "divyield": 1.89, "price": 38.72}, {"ticker": "EWZ", "name": "iShares MSCI Brazil ETF", "ytd": -6.8, "r1y": -4.2, "r3y": -4.5, "r5y": -12.8, "per": 7.5, "pbr": 1.4, "expense": 0.59, "divyield": 8.65, "price": 28.31}, {"ticker": "EWW", "name": "iShares MSCI Mexico ETF", "ytd": 3.5, "r1y": 7.8, "r3y": 29.5, "r5y": 21.8, "per": 11.2, "pbr": 2.1, "expense": 0.5, "divyield": 2.45, "price": 52.64}, {"ticker": "EPI", "name": "WisdomTree India Earnings ETF", "ytd": 6.8, "r1y": 14.5, "r3y": 53.2, "r5y": 72.5, "per": 18.5, "pbr": 3.2, "expense": 0.85, "divyield": 1.12, "price": 38.92}, {"ticker": "VNM", "name": "VanEck Vietnam ETF", "ytd": 11.2, "r1y": 6.8, "r3y": -9.2, "r5y": 3.5, "per": 10.8, "pbr": 1.6, "expense": 0.66, "divyield": 0.98, "price": 14.25}, {"ticker": "EIDO", "name": "iShares MSCI Indonesia ETF", "ytd": -2.5, "r1y": 3.2, "r3y": -5.2, "r5y": -19.5, "per": 14.2, "pbr": 2.0, "expense": 0.59, "divyield": 1.78, "price": 22.85}, {"ticker": "EWM", "name": "iShares MSCI Malaysia ETF", "ytd": 4.5, "r1y": 5.8, "r3y": 3.5, "r5y": -6.8, "per": 15.8, "pbr": 1.5, "expense": 0.5, "divyield": 3.25, "price": 24.12}, {"ticker": "THD", "name": "iShares MSCI Thailand ETF", "ytd": -3.5, "r1y": -1.2, "r3y": -12.2, "r5y": -24.8, "per": 17.5, "pbr": 1.8, "expense": 0.59, "divyield": 2.68, "price": 68.45}, {"ticker": "EPHE", "name": "iShares MSCI Philippines ETF", "ytd": 2.8, "r1y": 1.5, "r3y": -18.5, "r5y": -31.5, "per": 13.5, "pbr": 1.4, "expense": 0.59, "divyield": 1.45, "price": 26.38}, {"ticker": "GLD", "name": "SPDR Gold Shares", "ytd": 19.5, "r1y": 35.8, "r3y": 42.5, "r5y": 68.5, "per": null, "pbr": null, "expense": 0.4, "divyield": 0.0, "price": 228.45}, {"ticker": "GDX", "name": "VanEck Gold Miners ETF", "ytd": 28.5, "r1y": 42.5, "r3y": 26.8, "r5y": 38.5, "per": 22.5, "pbr": 2.8, "expense": 0.51, "divyield": 1.62, "price": 45.82}, {"ticker": "IBB", "name": "iShares Biotechnology ETF", "ytd": -4.5, "r1y": 2.8, "r3y": -7.2, "r5y": 15.5, "per": 28.5, "pbr": 4.5, "expense": 0.44, "divyield": 0.25, "price": 132.58}];
 
 // 円グラフ
-const pieData = [{"label": "EWG", "value": 5.9, "color": "#FF6384"}, {"label": "EPOL", "value": 0.9, "color": "#36A2EB"}, {"label": "TUR", "value": 1.3, "color": "#FFCE56"}, {"label": "EWZ", "value": 13.4, "color": "#4BC0C0"}, {"label": "EWW", "value": 4.2, "color": "#9966FF"}, {"label": "EPI", "value": 8.1, "color": "#FF9F40"}, {"label": "VNM", "value": 1.5, "color": "#66BB6A"}, {"label": "EIDO", "value": 1.6, "color": "#7BC8A4"}, {"label": "EWM", "value": 1.1, "color": "#F67019"}, {"label": "THD", "value": 1.2, "color": "#4DC9F6"}, {"label": "EPHE", "value": 0.5, "color": "#ACC236"}, {"label": "GDX", "value": 40.4, "color": "#FF5A5E"}, {"label": "IBB", "value": 20.1, "color": "#C9CB3F"}];
+const pieData = [{"label": "VT", "value": 3.3, "color": "#FF6384"}, {"label": "VTI", "value": 36.6, "color": "#36A2EB"}, {"label": "SPY", "value": 48.8, "color": "#FFCE56"}, {"label": "VGK", "value": 1.9, "color": "#4BC0C0"}, {"label": "EWG", "value": 0.2, "color": "#9966FF"}, {"label": "EPOL", "value": 0.0, "color": "#FF9F40"}, {"label": "TUR", "value": 0.0, "color": "#66BB6A"}, {"label": "EWZ", "value": 0.4, "color": "#7BC8A4"}, {"label": "EWW", "value": 0.1, "color": "#F67019"}, {"label": "EPI", "value": 0.3, "color": "#4DC9F6"}, {"label": "VNM", "value": 0.0, "color": "#ACC236"}, {"label": "EIDO", "value": 0.1, "color": "#FF5A5E"}, {"label": "EWM", "value": 0.0, "color": "#C9CB3F"}, {"label": "THD", "value": 0.0, "color": "#8B5CF6"}, {"label": "EPHE", "value": 0.0, "color": "#EC4899"}, {"label": "GLD", "value": 6.3, "color": "#F59E0B"}, {"label": "GDX", "value": 1.3, "color": "#10B981"}, {"label": "IBB", "value": 0.6, "color": "#6366F1"}];
 new Chart(document.getElementById('pieChart'), {
     type: 'pie',
     data: {
@@ -455,7 +520,7 @@ function selectRow(tr, idx) {
     }
 
     // リターン棒グラフ + 指標レーダー的な表示
-    const labels = ['YTD', '1年', '3年(年率)', '5年(年率)'];
+    const labels = ['YTD', '1年', '3年', '5年'];
     const values = [d.ytd, d.r1y, d.r3y, d.r5y];
     const bgColors = values.map(v => {
         if (v === null) return '#ddd';
