@@ -32,14 +32,12 @@ TICKERS = [
     "IBB",   # バイオテック
 ]
 
-OUTPUT_FILE = "index.html"
+OUTPUT_FILE = "docs/index.html"
 
 
 def safe_get(info: dict, key: str, default=None):
     val = info.get(key, default)
-    if val is None:
-        return default
-    return val
+    return default if val is None else val
 
 
 def fmt_pct(val, show_sign=True):
@@ -48,8 +46,7 @@ def fmt_pct(val, show_sign=True):
     try:
         v = float(val) * 100
         if show_sign:
-            sign = "+" if v > 0 else ""
-            return f"{sign}{v:.2f}%"
+            return f"{'+' if v > 0 else ''}{v:.2f}%"
         else:
             return f"{v:.2f}%"
     except (ValueError, TypeError):
@@ -87,51 +84,26 @@ def calc_returns(ticker_str):
         tk = yf.Ticker(ticker_str)
         hist = tk.history(period="5y")
         if hist.empty:
-            return {}, {}
-
+            return {}
         today_price = hist["Close"].iloc[-1]
         returns = {}
         now = hist.index[-1]
 
-        # YTD
         year_start = hist.index[hist.index >= f"{now.year}-01-01"]
         if len(year_start) > 0:
-            ytd_start = hist["Close"].loc[year_start[0]]
-            returns["ytd"] = (today_price - ytd_start) / ytd_start
-        else:
-            returns["ytd"] = None
+            returns["ytd"] = (today_price - hist["Close"].loc[year_start[0]]) / hist["Close"].loc[year_start[0]]
 
-        # 1年リターン
-        one_year_ago = now - datetime.timedelta(days=365)
-        candidates = hist.index[hist.index >= one_year_ago]
-        if len(candidates) > 0:
-            price_1y = hist["Close"].loc[candidates[0]]
-            returns["1y"] = (today_price - price_1y) / price_1y
-        else:
-            returns["1y"] = None
+        for key, days in [("1y", 365), ("3y", 365*3), ("5y", 365*5)]:
+            ago = now - datetime.timedelta(days=days)
+            cands = hist.index[hist.index >= ago]
+            if len(cands) > 0:
+                p = hist["Close"].loc[cands[0]]
+                returns[key] = (today_price - p) / p
 
-        # 3年トータルリターン
-        three_year_ago = now - datetime.timedelta(days=365 * 3)
-        candidates = hist.index[hist.index >= three_year_ago]
-        if len(candidates) > 0:
-            price_3y = hist["Close"].loc[candidates[0]]
-            returns["3y_ann"] = (today_price - price_3y) / price_3y
-        else:
-            returns["3y_ann"] = None
-
-        # 5年トータルリターン
-        five_year_ago = now - datetime.timedelta(days=365 * 5)
-        candidates = hist.index[hist.index >= five_year_ago]
-        if len(candidates) > 0:
-            price_5y = hist["Close"].loc[candidates[0]]
-            returns["5y_ann"] = (today_price - price_5y) / price_5y
-        else:
-            returns["5y_ann"] = None
-
-        return returns, {}
+        return returns
     except Exception as e:
         print(f"  リターン計算エラー ({ticker_str}): {e}")
-        return {}, {}
+        return {}
 
 
 def fetch_etf_data():
@@ -141,7 +113,7 @@ def fetch_etf_data():
         try:
             tk = yf.Ticker(ticker_str)
             info = tk.info
-            returns, _ = calc_returns(ticker_str)
+            returns = calc_returns(ticker_str)
             row = {
                 "ticker": ticker_str,
                 "name": safe_get(info, "shortName", ticker_str),
@@ -152,8 +124,8 @@ def fetch_etf_data():
                 "dividend_yield": safe_get(info, "yield"),
                 "ytd": returns.get("ytd"),
                 "return_1y": returns.get("1y"),
-                "return_3y": returns.get("3y_ann"),
-                "return_5y": returns.get("5y_ann"),
+                "return_3y": returns.get("3y"),
+                "return_5y": returns.get("5y"),
                 "price": safe_get(info, "previousClose"),
                 "currency": safe_get(info, "currency", "USD"),
                 "category": safe_get(info, "category", "-"),
@@ -173,71 +145,43 @@ def fetch_etf_data():
     return etf_data
 
 
-def color_cell(val, reverse=False):
+def color_cell(val):
     if val is None or val == "-":
         return ""
     try:
         v = float(val)
-        if reverse:
-            v = -v
-        if v > 0:
-            return "positive"
-        elif v < 0:
-            return "negative"
+        return "positive" if v > 0 else ("negative" if v < 0 else "")
     except (ValueError, TypeError):
-        pass
-    return ""
+        return ""
 
 
 def generate_html(etf_data):
     """HTMLファイルを生成"""
     now = datetime.datetime.now().strftime("%Y年%m月%d日 %H:%M")
 
-    # 時価総額の最大値（セル内バー用）
     mc_values = [float(d["market_cap"]) for d in etf_data if d["market_cap"] is not None]
     max_mc = max(mc_values) if mc_values else 1
 
-    # テーブル行
     rows_html = ""
     for i, d in enumerate(etf_data):
-        ytd_cls = color_cell(d["ytd"])
-        r1y_cls = color_cell(d["return_1y"])
-        r3y_cls = color_cell(d["return_3y"])
-        r5y_cls = color_cell(d["return_5y"])
         mc_val = float(d["market_cap"]) if d["market_cap"] is not None else 0
         mc_pct = (mc_val / max_mc * 100) if max_mc > 0 else 0
 
         rows_html += f"""
         <tr data-idx="{i}" onclick="selectRow(this, {i})" title="{d.get('name','')}">
-            <td class="ticker-cell"><strong>{d['ticker']}</strong></td>
+            <td class="ticker-cell sticky-col"><strong>{d['ticker']}</strong></td>
             <td>{fmt_num(d['price'], 2)}</td>
             <td>{fmt_num(d['per'], 1)}</td>
             <td>{fmt_num(d['pbr'], 2)}</td>
             <td>{fmt_pct(d['expense_ratio'], show_sign=False)}</td>
             <td class="mc-cell"><div class="mc-bar" style="width:{mc_pct:.1f}%"></div><span class="mc-label">{fmt_market_cap(d['market_cap'])}</span></td>
             <td>{fmt_pct(d['dividend_yield'], show_sign=False)}</td>
-            <td class="{ytd_cls}">{fmt_pct(d['ytd'])}</td>
-            <td class="{r1y_cls}">{fmt_pct(d['return_1y'])}</td>
-            <td class="{r3y_cls}">{fmt_pct(d['return_3y'])}</td>
-            <td class="{r5y_cls}">{fmt_pct(d['return_5y'])}</td>
+            <td class="{color_cell(d['ytd'])}">{fmt_pct(d['ytd'])}</td>
+            <td class="{color_cell(d['return_1y'])}">{fmt_pct(d['return_1y'])}</td>
+            <td class="{color_cell(d['return_3y'])}">{fmt_pct(d['return_3y'])}</td>
+            <td class="{color_cell(d['return_5y'])}">{fmt_pct(d['return_5y'])}</td>
         </tr>"""
 
-    # 散布図データ
-    scatter_colors = [
-        "#FF6384", "#36A2EB", "#FFCE56", "#4BC0C0", "#9966FF",
-        "#FF9F40", "#66BB6A", "#7BC8A4", "#F67019", "#4DC9F6",
-        "#ACC236", "#FF5A5E", "#C9CB3F", "#8B5CF6", "#EC4899",
-        "#F59E0B", "#10B981", "#6366F1",
-    ]
-    scatter_data = []
-    for i, d in enumerate(etf_data):
-        exp = float(d["expense_ratio"]) * 100 if d["expense_ratio"] is not None else None
-        div = float(d["dividend_yield"]) * 100 if d["dividend_yield"] is not None else None
-        if exp is not None and div is not None:
-            scatter_data.append({"ticker": d["ticker"], "x": round(exp, 3), "y": round(div, 2), "color": scatter_colors[i % len(scatter_colors)]})
-    scatter_json = json.dumps(scatter_data, ensure_ascii=False)
-
-    # 行選択チャート用データ
     chart_data_list = []
     for d in etf_data:
         chart_data_list.append({
@@ -277,7 +221,6 @@ h1 {{
     color: #0d1b2a;
     margin: 4px 0;
     text-align: center;
-    letter-spacing: 0.03em;
 }}
 .update-time {{
     text-align: center;
@@ -286,15 +229,19 @@ h1 {{
     margin-bottom: 6px;
     font-weight: 500;
 }}
+
+/* テーブル: ティッカー列固定 + 横スクロール */
 .table-wrapper {{
     overflow-x: auto;
     border-radius: 8px;
     box-shadow: 0 1px 6px rgba(0,0,0,0.08);
     margin-bottom: 10px;
     background: #fff;
+    position: relative;
 }}
 table {{
-    width: 100%;
+    width: max-content;
+    min-width: 100%;
     border-collapse: collapse;
     font-size: 0.85rem;
     font-weight: 700;
@@ -302,7 +249,7 @@ table {{
 thead th {{
     background: #0d1b2a;
     color: #fff;
-    padding: 6px 8px;
+    padding: 6px 10px;
     text-align: center;
     font-size: 0.78rem;
     font-weight: 800;
@@ -311,12 +258,29 @@ thead th {{
     top: 0;
     z-index: 10;
 }}
+thead th:first-child {{
+    position: sticky;
+    left: 0;
+    z-index: 20;
+    background: #0d1b2a;
+}}
 tbody td {{
-    padding: 5px 8px;
+    padding: 5px 10px;
     text-align: center;
     border-bottom: 1px solid #e8e8e8;
     white-space: nowrap;
 }}
+.sticky-col {{
+    position: sticky;
+    left: 0;
+    z-index: 5;
+    background: #fff;
+    border-right: 2px solid #e0e0e0;
+}}
+tbody tr:nth-child(even) .sticky-col {{ background: #fafbfd; }}
+tbody tr:hover .sticky-col {{ background: #f0f4ff; }}
+tbody tr:nth-child(even):hover .sticky-col {{ background: #e8eeff; }}
+tbody tr.selected .sticky-col {{ background: #dce6ff; }}
 tbody tr {{
     cursor: pointer;
     transition: background 0.15s;
@@ -335,7 +299,7 @@ tbody tr.selected {{
 /* 時価総額セル内バー */
 .mc-cell {{
     position: relative;
-    padding: 5px 8px;
+    padding: 5px 10px;
     min-width: 110px;
 }}
 .mc-bar {{
@@ -351,38 +315,28 @@ tbody tr.selected {{
     font-weight: 800;
 }}
 
-/* チャート */
-.charts-grid {{
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
-    margin-bottom: 10px;
-}}
-.chart-box {{
+/* チャート（全幅1カラム） */
+.chart-section {{
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 1px 6px rgba(0,0,0,0.08);
     padding: 10px;
+    margin-bottom: 10px;
 }}
-.chart-box h3 {{
+.chart-section h3 {{
     font-size: 0.9rem;
     font-weight: 800;
     color: #1b263b;
     margin-bottom: 6px;
     text-align: center;
+    min-height: 1.2em;
 }}
 canvas {{ max-width: 100%; }}
-.scatter-container {{
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 400px;
-}}
 .detail-chart-container {{
     display: flex;
     justify-content: center;
     align-items: center;
-    min-height: 400px;
+    min-height: 300px;
     position: relative;
 }}
 .detail-placeholder {{
@@ -394,17 +348,10 @@ canvas {{ max-width: 100%; }}
     font-weight: 700;
     font-size: 0.9rem;
     gap: 8px;
-    min-height: 400px;
+    min-height: 300px;
 }}
 .detail-placeholder svg {{ opacity: 0.3; }}
-#detailTitle {{
-    font-size: 0.9rem;
-    font-weight: 800;
-    color: #1b263b;
-    margin-bottom: 6px;
-    text-align: center;
-    min-height: 1.2em;
-}}
+
 footer {{
     text-align: center;
     font-size: 0.65rem;
@@ -413,7 +360,6 @@ footer {{
     font-weight: 500;
 }}
 @media (max-width: 768px) {{
-    .charts-grid {{ grid-template-columns: 1fr; }}
     h1 {{ font-size: 1.2rem; }}
     table {{ font-size: 0.75rem; }}
 }}
@@ -448,22 +394,14 @@ footer {{
 </table>
 </div>
 
-<div class="charts-grid">
-    <div class="chart-box">
-        <h3>配当利回り vs 経費率</h3>
-        <div class="scatter-container">
-            <canvas id="scatterChart"></canvas>
+<div class="chart-section">
+    <h3 id="detailTitle"></h3>
+    <div class="detail-chart-container">
+        <div class="detail-placeholder" id="detailPlaceholder">
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 5-9"/></svg>
+            テーブルの行をクリックするとチャートを表示
         </div>
-    </div>
-    <div class="chart-box">
-        <h3 id="detailTitle"></h3>
-        <div class="detail-chart-container">
-            <div class="detail-placeholder" id="detailPlaceholder">
-                <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 3v18h18"/><path d="M7 16l4-8 4 4 5-9"/></svg>
-                テーブルの行をクリックするとチャートを表示
-            </div>
-            <canvas id="detailChart" style="display:none;"></canvas>
-        </div>
+        <canvas id="detailChart" style="display:none;"></canvas>
     </div>
 </div>
 
@@ -473,74 +411,8 @@ footer {{
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
 <script>
 const etfData = {chart_data_json};
-
-// === 散布図 ===
-const scatterRaw = {scatter_json};
-new Chart(document.getElementById('scatterChart'), {{
-    type: 'scatter',
-    data: {{
-        datasets: scatterRaw.map(d => ({{
-            label: d.ticker,
-            data: [{{ x: d.x, y: d.y }}],
-            backgroundColor: d.color,
-            borderColor: d.color,
-            pointRadius: 7,
-            pointHoverRadius: 10,
-        }}))
-    }},
-    options: {{
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: {{
-            x: {{
-                title: {{ display: true, text: '経費率 (%)', font: {{ weight: 'bold', size: 13 }}, color: '#333' }},
-                ticks: {{ callback: v => v.toFixed(2) + '%', font: {{ weight: 'bold', size: 11 }} }},
-                grid: {{ color: '#f0f0f0' }},
-                min: 0,
-            }},
-            y: {{
-                title: {{ display: true, text: '配当利回り (%)', font: {{ weight: 'bold', size: 13 }}, color: '#333' }},
-                ticks: {{ callback: v => v.toFixed(1) + '%', font: {{ weight: 'bold', size: 11 }} }},
-                grid: {{ color: '#f0f0f0' }},
-                min: 0,
-            }}
-        }},
-        plugins: {{
-            legend: {{
-                position: 'bottom',
-                labels: {{ font: {{ size: 11, weight: 'bold' }}, padding: 6, usePointStyle: true, pointStyleWidth: 10 }}
-            }},
-            tooltip: {{
-                callbacks: {{
-                    label: ctx => ctx.dataset.label + ' : 経費率 ' + ctx.raw.x.toFixed(2) + '% / 配当 ' + ctx.raw.y.toFixed(2) + '%'
-                }},
-                titleFont: {{ weight: 'bold', size: 13 }},
-                bodyFont: {{ weight: 'bold', size: 12 }},
-            }}
-        }}
-    }},
-    plugins: [{{
-        afterDraw(chart) {{
-            const ctx = chart.ctx;
-            chart.data.datasets.forEach((ds, i) => {{
-                const meta = chart.getDatasetMeta(i);
-                if (meta.data.length > 0) {{
-                    const pt = meta.data[0];
-                    ctx.save();
-                    ctx.font = 'bold 11px sans-serif';
-                    ctx.fillStyle = '#444';
-                    ctx.textAlign = 'left';
-                    ctx.textBaseline = 'bottom';
-                    ctx.fillText(ds.label, pt.x + 10, pt.y - 2);
-                    ctx.restore();
-                }}
-            }});
-        }}
-    }}]
-}});
-
-// === 個別ETF詳細チャート ===
 let detailChartInstance = null;
+
 function selectRow(tr, idx) {{
     document.querySelectorAll('tbody tr').forEach(r => r.classList.remove('selected'));
     tr.classList.add('selected');
@@ -563,7 +435,7 @@ function selectRow(tr, idx) {{
             responsive: true, maintainAspectRatio: false, indexAxis: 'y',
             scales: {{
                 x: {{ ticks: {{ callback: v => v + '%', font: {{ weight: 'bold', size: 12 }} }}, grid: {{ color: '#f0f0f0' }} }},
-                y: {{ ticks: {{ font: {{ weight: 'bold', size: 13 }} }}, grid: {{ display: false }} }}
+                y: {{ ticks: {{ font: {{ weight: 'bold', size: 14 }} }}, grid: {{ display: false }} }}
             }},
             plugins: {{
                 legend: {{ display: false }},
@@ -578,11 +450,11 @@ function selectRow(tr, idx) {{
                     const bar = chart.getDatasetMeta(0).data[i];
                     const text = (val > 0 ? '+' : '') + val.toFixed(2) + '%';
                     ctx.save();
-                    ctx.font = 'bold 13px sans-serif';
+                    ctx.font = 'bold 14px sans-serif';
                     ctx.fillStyle = val >= 0 ? '#d32f2f' : '#1565c0';
                     ctx.textAlign = val >= 0 ? 'left' : 'right';
                     ctx.textBaseline = 'middle';
-                    ctx.fillText(text, val >= 0 ? bar.x + 6 : bar.x - 6, bar.y);
+                    ctx.fillText(text, val >= 0 ? bar.x + 8 : bar.x - 8, bar.y);
                     ctx.restore();
                 }});
             }}
@@ -602,13 +474,12 @@ def main():
     print("=" * 50)
     etf_data = fetch_etf_data()
     html = generate_html(etf_data)
+    import os
+    os.makedirs(os.path.dirname(OUTPUT_FILE), exist_ok=True)
     with open(OUTPUT_FILE, "w", encoding="utf-8") as f:
         f.write(html)
     print(f"\n✅ 生成完了: {OUTPUT_FILE}")
     print(f"   ETF数: {len(etf_data)}")
-    print("   GitHub Pagesで公開するには:")
-    print("   1. このファイルをGitHubリポジトリにpush")
-    print("   2. Settings > Pages > Source を main ブランチに設定")
 
 
 if __name__ == "__main__":
